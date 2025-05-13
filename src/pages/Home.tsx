@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { CheckList } from '../types';
+import CreateListModal from '../components/CreateListModal';
+import { generateSlug } from '../utils';
 
 const Home: React.FC = () => {
   const [lists, setLists] = useState<CheckList[]>([]);
@@ -18,17 +20,31 @@ const Home: React.FC = () => {
   const handleOpenCreateModal = () => setIsModalOpen(true);
   const handleCloseCreateModal = () => setIsModalOpen(false);
 
+  
+  const handleCreateList = (title: string) => {
+    const newSlug = generateSlug(title) + '-' + Date.now();
+    const newList: CheckList = {
+      slug: newSlug,
+      title,
+      items: [],
+      created_at: new Date(),
+    };
+    setLists(prevLists => [newList, ...prevLists].sort((a, b) => b.created_at.getTime() - a.created_at.getTime()));
+    handleCloseCreateModal();
+  };
+
   return (
     <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white">
       <header className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold">Mis Listas</h1>
-        <button
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Mis Listas de Tareas</h1>
+        <p className="text-slate-400 mt-1">Organiza tu día, una tarea a la vez.</p>
+    </header>
+    <button
           onClick={handleOpenCreateModal}
-          className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg"
+          className="my-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg"
         >
           Crear Nueva Lista
         </button>
-      </header>
 
       {lists.length === 0 && <p className="text-slate-400">No hay listas aún. ¡Crea una!</p>}
 
@@ -48,17 +64,11 @@ const Home: React.FC = () => {
         ))}
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-slate-700 p-6 rounded-lg">
-            <h2 className="text-xl mb-4">Crear Nueva Lista (Modal Placeholder)</h2>
-            <p className="mb-4">Aquí iría el formulario del modal.</p>
-            <button onClick={handleCloseCreateModal} className="bg-red-500 p-2 rounded">
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
+      <CreateListModal
+        isOpen={isModalOpen}
+        onClose={handleCloseCreateModal}
+        onCreateList={handleCreateList}
+      />
     </div>
   );
 };
