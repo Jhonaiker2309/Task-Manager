@@ -4,20 +4,26 @@ import type { CheckList } from '../types';
 
 const Home: React.FC = () => {
   const [lists, setLists] = useState<CheckList[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const mockLists: CheckList[] = [
       { slug: 'compras-semanales', title: 'Compras Semanales', items: [], created_at: new Date() },
       { slug: 'tareas-proyecto-x', title: 'Tareas Proyecto X', items: [], created_at: new Date(Date.now() - 86400000) },
     ];
-    setLists(mockLists.sort((a,b) => b.created_at.getTime() - a.created_at.getTime()));
+    setLists(mockLists.sort((a, b) => b.created_at.getTime() - a.created_at.getTime()));
+    console.log('Home page cargada, listas:', mockLists);
   }, []);
+
+  const handleOpenCreateModal = () => setIsModalOpen(true);
+  const handleCloseCreateModal = () => setIsModalOpen(false);
 
   return (
     <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white">
       <header className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-bold">Mis Listas</h1>
         <button
+          onClick={handleOpenCreateModal}
           className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg"
         >
           Crear Nueva Lista
@@ -33,7 +39,7 @@ const Home: React.FC = () => {
             <p className="text-sm text-slate-400 mb-1">Creada: {list.created_at.toLocaleDateString()}</p>
             <p className="text-sm text-slate-500 mb-3">Tareas: {list.items.length}</p>
             <Link
-              to={`/`}
+              to={`/list/${list.slug}`}
               className="inline-block bg-purple-500/30 hover:bg-purple-500/50 text-purple-300 py-2 px-4 rounded-md text-sm"
             >
               Ver Detalles
@@ -41,6 +47,18 @@ const Home: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-slate-700 p-6 rounded-lg">
+            <h2 className="text-xl mb-4">Crear Nueva Lista (Modal Placeholder)</h2>
+            <p className="mb-4">Aquí iría el formulario del modal.</p>
+            <button onClick={handleCloseCreateModal} className="bg-red-500 p-2 rounded">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
