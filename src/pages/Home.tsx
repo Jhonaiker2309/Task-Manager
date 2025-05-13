@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { CheckList } from '../types';
 import CreateListModal from '../components/CreateListModal';
+import DeleteListModal from '../components/DeleteListModal';
 import { generateSlug } from '../utils';
 
 const Home: React.FC = () => {
   const [lists, setLists] = useState<CheckList[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [listToDelete, setListToDelete] = useState<CheckList | null>(null);
 
   useEffect(() => {
     const mockLists: CheckList[] = [
@@ -20,7 +23,23 @@ const Home: React.FC = () => {
   const handleOpenCreateModal = () => setIsModalOpen(true);
   const handleCloseCreateModal = () => setIsModalOpen(false);
 
-  
+  const handleOpenDeleteModal = (list: CheckList) => {
+    setListToDelete(list);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setListToDelete(null);
+  };
+
+  const handleConfirmDeleteList = () => {
+    if (listToDelete) {
+      setLists(prevLists => prevLists.filter(list => list.slug !== listToDelete.slug));
+    }
+    handleCloseDeleteModal();
+  };
+
   const handleCreateList = (title: string) => {
     const newSlug = generateSlug(title) + '-' + Date.now();
     const newList: CheckList = {
@@ -47,27 +66,52 @@ const Home: React.FC = () => {
         </button>
 
       {lists.length === 0 && <p className="text-slate-400">No hay listas aún. ¡Crea una!</p>}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {lists.map((list) => (
-          <div key={list.slug} className="bg-slate-800 p-5 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-purple-400 mb-2">{list.title}</h2>
-            <p className="text-sm text-slate-400 mb-1">Creada: {list.created_at.toLocaleDateString()}</p>
-            <p className="text-sm text-slate-500 mb-3">Tareas: {list.items.length}</p>
-            <Link
-              to={`/list/${list.slug}`}
-              className="inline-block bg-purple-500/30 hover:bg-purple-500/50 text-purple-300 py-2 px-4 rounded-md text-sm"
-            >
-              Ver Detalles
-            </Link>
-          </div>
-        ))}
+          <div
+            key={list.slug}
+            className="bg-slate-800/70 p-5 rounded-xl shadow-lg flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-purple-500/20 hover:-translate-y-1"
+          >
+            <div>
+              <h2 className="text-xl font-semibold text-purple-300 mb-2 truncate" title={list.title}>
+                {list.title}
+              </h2>
+              <p className="text-xs text-slate-400 mb-1">
+                Creada: {list.created_at.toLocaleDateString()}
+              </p>
+              <p className="text-sm text-slate-500 mb-4">
+                Tareas: {list.items.length}
+              </p>
+            </div>
+
+            <div className="mt-auto space-y-2">
+              <Link
+                to={`/list/${list.slug}`}
+                className="block w-full text-center bg-purple-600 hover:bg-purple-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75"
+              >
+                Ver Detalles
+              </Link>
+              <button
+                onClick={() => handleOpenDeleteModal(list)}
+                className="block w-full text-center bg-red-600/50 hover:bg-red-600/80 text-red-100 font-medium py-2 px-4 rounded-md shadow-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>        ))}
       </div>
 
       <CreateListModal
         isOpen={isModalOpen}
         onClose={handleCloseCreateModal}
         onCreateList={handleCreateList}
+      />
+
+      <DeleteListModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirmDelete={handleConfirmDeleteList}
+        listTitle={listToDelete?.title}
       />
     </div>
   );
