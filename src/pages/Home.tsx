@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { CheckList } from '../types';
 import CreateListModal from '../components/CreateListModal';
 import DeleteListModal from '../components/DeleteListModal';
+import EditListModal from '../components/EditListModal';
 import { generateSlug } from '../utils';
 
 const Home: React.FC = () => {
@@ -10,6 +11,9 @@ const Home: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [listToDelete, setListToDelete] = useState<CheckList | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [listToModify, setListToModify] = useState<CheckList | null>(null);
+
 
   useEffect(() => {
     const mockLists: CheckList[] = [
@@ -52,6 +56,30 @@ const Home: React.FC = () => {
     handleCloseCreateModal();
   };
 
+  const handleOpenEditModal = (list: CheckList) => {
+    setListToModify(list);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setListToModify(null);
+  };
+
+
+  const handleSaveListTitle = (newTitle: string) => {
+    if (listToModify) {
+      setLists(prevLists =>
+        prevLists.map(list =>
+          list.slug === listToModify.slug
+            ? { ...list, title: newTitle.trim() }
+            : list
+        )
+      );
+    }
+    handleCloseEditModal();
+  };
+
   return (
     <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white">
       <header className="mb-8">
@@ -92,6 +120,12 @@ const Home: React.FC = () => {
                 Ver Detalles
               </Link>
               <button
+                onClick={() => handleOpenEditModal(list)}
+                className="block w-full text-center bg-sky-600/60 hover:bg-sky-600/90 text-sky-100 font-medium py-2 px-4 rounded-md shadow-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-75"
+              >
+                Editar Nombre
+              </button>
+              <button
                 onClick={() => handleOpenDeleteModal(list)}
                 className="block w-full text-center bg-red-600/50 hover:bg-red-600/80 text-red-100 font-medium py-2 px-4 rounded-md shadow-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
               >
@@ -113,6 +147,14 @@ const Home: React.FC = () => {
         onConfirmDelete={handleConfirmDeleteList}
         listTitle={listToDelete?.title}
       />
+      {listToModify && (
+        <EditListModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSave={handleSaveListTitle}
+          currentTitle={listToModify.title}
+        />
+      )}
     </div>
   );
 };
