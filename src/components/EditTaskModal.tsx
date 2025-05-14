@@ -1,29 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useLists } from '../contexts/ListContext';
 
-interface EditListModalProps {
+interface EditTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTitle: string;
-  listSlug: string;
+  onSave: (newMessage: string) => void;
+  currentMessage: string;
 }
 
-const EditListModal: React.FC<EditListModalProps> = ({
-  isOpen,
-  onClose,
-  currentTitle,
-  listSlug,
-}) => {
-  const { updateListTitle } = useLists();
-  const [newTitle, setNewTitle] = useState(currentTitle);
+const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onSave, currentMessage }) => {
+  const [newMessage, setNewMessage] = useState(currentMessage);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setNewTitle(currentTitle);
+      setNewMessage(currentMessage);
       setError('');
     }
-  }, [isOpen, currentTitle]);
+  }, [isOpen, currentMessage]);
 
   if (!isOpen) {
     return null;
@@ -31,16 +24,15 @@ const EditListModal: React.FC<EditListModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTitle.trim() === '') {
-      setError('El título de la lista no puede estar vacío.');
+    if (newMessage.trim() === '') {
+      setError('El mensaje de la tarea no puede estar vacío.');
       return;
     }
-    if (newTitle.trim() === currentTitle) {
+    if (newMessage.trim() === currentMessage) {
       onClose();
       return;
     }
-    updateListTitle(listSlug, newTitle.trim());
-    onClose();
+    onSave(newMessage.trim());
   };
 
   return (
@@ -53,7 +45,7 @@ const EditListModal: React.FC<EditListModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-white">Editar Nombre de la Lista</h2>
+          <h2 className="text-2xl font-semibold text-white">Editar Tarea</h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-200 transition-colors text-3xl leading-none"
@@ -64,21 +56,20 @@ const EditListModal: React.FC<EditListModalProps> = ({
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-5">
-            <label htmlFor="listNewTitle" className="block text-sm font-medium text-slate-300 mb-1.5">
-              Nuevo Título
+            <label htmlFor="taskNewMessage" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Nuevo Mensaje de la Tarea
             </label>
-            <input
-              type="text"
-              id="listNewTitle"
-              value={newTitle}
+            <textarea
+              id="taskNewMessage"
+              value={newMessage}
               onChange={(e) => {
-                setNewTitle(e.target.value);
+                setNewMessage(e.target.value);
                 if (error) setError('');
               }}
               className={`w-full px-4 py-3 bg-slate-700 border ${
                 error ? 'border-red-500' : 'border-slate-600'
-              } rounded-md text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-shadow`}
-              placeholder="Ej: Mis Proyectos Importantes"
+              } rounded-md text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-shadow min-h-[80px]`}
+              placeholder="Describe la tarea..."
               required
               autoFocus
             />
@@ -105,4 +96,4 @@ const EditListModal: React.FC<EditListModalProps> = ({
   );
 };
 
-export default EditListModal;
+export default EditTaskModal;

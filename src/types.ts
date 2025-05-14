@@ -25,4 +25,6 @@ export interface ListContextType {
   getListBySlug: (slug: string) => CheckList | undefined;
   addTaskToList: (listSlug: string, taskMessage: string) => void;
   toggleTaskInList: (listSlug: string, taskIndex: number) => void;
+  editTaskInList: (listSlug: string, taskIndex: number, newMessage: string) => void;
+  deleteTaskFromList: (listSlug: string, taskIndex: number) => void; 
 }
