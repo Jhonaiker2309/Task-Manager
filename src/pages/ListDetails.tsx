@@ -56,9 +56,6 @@ const ListDetails: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl font-bold text-purple-200 break-words">
             {list.title}
           </h1>
-          <button className="mt-2 sm:mt-0 bg-slate-700 hover:bg-slate-600 text-sm text-slate-300 py-2 px-4 rounded-md transition-colors">
-            Editar Nombre Lista (P)
-          </button>
         </div>
         <p className="text-xs text-slate-500 mt-2">
           Creada: {new Date(list.created_at).toLocaleDateString()} a las{" "}
