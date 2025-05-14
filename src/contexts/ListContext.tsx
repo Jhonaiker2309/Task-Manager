@@ -110,6 +110,20 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     saveListsToLocalStorage(updatedLists);
   };
 
+  const editTaskInList = (listSlug: string, taskIndex: number, newMessage: string) => {
+    const updatedLists = lists.map(list => {
+      if (list.slug === listSlug) {
+        const updatedItems = list.items.map((item, index) =>
+          index === taskIndex ? { ...item, message: newMessage.trim() } : item
+        );
+        return { ...list, items: updatedItems };
+      }
+      return list;
+    });
+    setLists(updatedLists);
+    saveListsToLocalStorage(updatedLists);
+  };
+
   const toggleTaskInList = (listSlug: string, taskIndex: number) => {
      const updatedLists = lists.map(list => {
       if (list.slug === listSlug) {
@@ -135,6 +149,18 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     saveListsToLocalStorage(updatedLists);
   };
 
+  const deleteTaskFromList = (listSlug: string, taskIndex: number) => {
+    const updatedLists = lists.map(list => {
+      if (list.slug === listSlug) {
+        const updatedItems = list.items.filter((_, index) => index !== taskIndex);
+        return { ...list, items: updatedItems };
+      }
+      return list;
+    });
+    setLists(updatedLists);
+    saveListsToLocalStorage(updatedLists);
+  };
+
   return (
     <ListContext.Provider value={{
       lists,
@@ -145,7 +171,9 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       deleteList,
       getListBySlug,
       addTaskToList,
-      toggleTaskInList
+      toggleTaskInList,
+      editTaskInList,
+      deleteTaskFromList
     }}>
       {children}
     </ListContext.Provider>
