@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { useLists } from "../contexts/ListContext";
 import EditTaskModal from "../components/EditTaskModal";
 import DeleteTaskModal from "../components/DeleteTaskModal";
+import TaskItem from "../components/TaskItem";
+
 
 const ListDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -146,58 +148,15 @@ const ListDetails: React.FC = () => {
         ) : (
           <ul className="space-y-3">
             {list.items.map((item, index) => (
-              <li
-                key={index} // Consider using a more stable key if items can be reordered significantly, e.g., item.id if available
-                className={`p-4 rounded-lg shadow-md ${
-                  item.done ? "bg-slate-700/50" : "bg-slate-800"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-grow mr-4">
-                    <span
-                      className={`block text-sm ${
-                        item.done
-                          ? "line-through text-slate-500"
-                          : "text-slate-300"
-                      }`}
-                    >
-                      {item.message}
-                    </span>
-                    <span className="block text-xs text-slate-400 mt-1">
-                      Creada: {new Date(item.created_at).toLocaleDateString()} a
-                      las {new Date(item.created_at).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-2 mt-2 sm:mt-0">
-                    <button
-                      onClick={() => handleToggleTask(index)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold w-full sm:w-auto transition-colors ${
-                        item.done
-                          ? "bg-purple-500 hover:bg-purple-600 text-white"
-                          : "bg-slate-600 hover:bg-slate-500 text-slate-300"
-                      }`}
-                    >
-                      {item.done ? "Desmarcar" : "Completar"}
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleOpenEditTaskModal(index, item.message)
-                      }
-                      className="px-3 py-1.5 rounded-md text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white w-full sm:w-auto transition-colors"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleOpenDeleteTaskModal(index, item.message)
-                      }
-                      className="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto transition-colors"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </li>
+              <TaskItem
+                key={index}
+                message={item.message}
+                done={item.done}
+                createdAt={item.created_at}
+                onToggle={() => handleToggleTask(index)}
+                onEdit={() => handleOpenEditTaskModal(index, item.message)}
+                onDelete={() => handleOpenDeleteTaskModal(index, item.message)}
+              />
             ))}
           </ul>
         )}
