@@ -14,3 +14,15 @@ export interface CheckList {
 export interface Data {
   lists: Array<CheckList>;
 }
+
+export interface ListContextType {
+  lists: CheckList[];
+  loading: boolean;
+  fetchLists: () => void;
+  createList: (title: string) => void;
+  updateListTitle: (slug: string, newTitle: string) => void;
+  deleteList: (slug: string) => void;
+  getListBySlug: (slug: string) => CheckList | undefined;
+  addTaskToList: (listSlug: string, taskMessage: string) => void;
+  toggleTaskInList: (listSlug: string, taskIndex: number) => void;
+}
