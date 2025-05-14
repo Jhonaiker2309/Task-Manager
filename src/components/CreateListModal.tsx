@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useLists } from '../contexts/ListContext';
 
 interface CreateListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateList: (title: string) => void;
 }
 
-const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose, onCreateList }) => {
+const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose }) => {
+  const { createList } = useLists();
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
 
@@ -27,7 +28,8 @@ const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose, onCr
       setError('El título de la lista no puede estar vacío.');
       return;
     }
-    onCreateList(title.trim());
+    createList(title.trim());
+    onClose();
   };
 
   return (

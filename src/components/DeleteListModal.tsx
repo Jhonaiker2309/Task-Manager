@@ -1,24 +1,30 @@
 import React from 'react';
+import { useLists } from '../contexts/ListContext';
 
 interface DeleteListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirmDelete: () => void;
+  listSlug?: string;
   listTitle?: string;
 }
 
 const DeleteListModal: React.FC<DeleteListModalProps> = ({
   isOpen,
   onClose,
-  onConfirmDelete,
+  listSlug,
   listTitle,
 }) => {
+  const { deleteList } = useLists();
+
   if (!isOpen) {
     return null;
   }
 
   const handleConfirm = () => {
-    onConfirmDelete();
+    if (listSlug) {
+      deleteList(listSlug);
+    }
+    onClose();
   };
 
   return (

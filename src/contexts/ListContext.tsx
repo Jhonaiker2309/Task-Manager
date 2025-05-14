@@ -58,7 +58,7 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [loadListsFromLocalStorage]);
 
   const createList = (title: string) => {
-    const newSlug = generateSlug(title) + '-' + Date.now();
+    const newSlug = generateSlug(title);
     const newList: CheckList = {
       slug: newSlug,
       title: title.trim(),
