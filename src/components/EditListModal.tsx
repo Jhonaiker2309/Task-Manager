@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useLists } from '../contexts/ListContext'; // Importa el hook del contexto
 
 interface EditListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (newTitle: string) => void;
   currentTitle: string;
+  listSlug: string; // Identificador único de la lista
 }
 
 const EditListModal: React.FC<EditListModalProps> = ({
   isOpen,
   onClose,
-  onSave,
   currentTitle,
+  listSlug,
 }) => {
+  const { updateListTitle } = useLists(); // Obtén la función updateListTitle del contexto
   const [newTitle, setNewTitle] = useState(currentTitle);
   const [error, setError] = useState('');
 
@@ -37,7 +39,8 @@ const EditListModal: React.FC<EditListModalProps> = ({
       onClose();
       return;
     }
-    onSave(newTitle.trim());
+    updateListTitle(listSlug, newTitle.trim()); // Usa la función del contexto para actualizar el título
+    onClose(); // Cierra el modal después de guardar los cambios
   };
 
   return (
