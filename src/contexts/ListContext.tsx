@@ -24,23 +24,47 @@ const openDB = (): Database | null => {
   return null;
 };
 
+const initDB = () => {
+  const db = openDB();
+  if (!db) return;
+  db.transaction((tx) => {
+    tx.executeSql(
+      `CREATE TABLE IF NOT EXISTS lists (
+         slug       TEXT PRIMARY KEY,
+         title      TEXT,
+         created_at INTEGER
+       )`
+    );
+    tx.executeSql(
+      `CREATE TABLE IF NOT EXISTS tasks (
+         list_slug  TEXT,
+         message    TEXT,
+         done       INTEGER,
+         created_at INTEGER,
+         PRIMARY KEY (message, created_at)
+       )`
+    );
+    tx.executeSql(
+      "CREATE INDEX IF NOT EXISTS idx_tasks_list_slug ON tasks(list_slug)"
+    );
+  });
+};
+
+initDB();
+
 function saveListsToWebSQL(lists: CheckList[]) {
   const db = openDB();
   if (!db) return;
   db.transaction((tx: SQLTransaction) => {
     tx.executeSql(
       "CREATE TABLE IF NOT EXISTS lists (id unique, data TEXT)",
-      [],
-      undefined,
-      undefined
+      []
     );
-    tx.executeSql("DELETE FROM lists", [], undefined, undefined);
-    tx.executeSql(
-      "INSERT INTO lists (id, data) VALUES (?, ?)",
-      [1, JSON.stringify(lists)],
-      undefined,
-      undefined
-    );
+    tx.executeSql("DELETE FROM lists", []);
+    tx.executeSql("INSERT INTO lists (id, data) VALUES (?, ?)", [
+      1,
+      JSON.stringify(lists),
+    ]);
   });
 }
 
@@ -90,39 +114,41 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     saveListsToWebSQL(currentLists);
-
   };
 
-const loadListsFromLocalStorage = useCallback(async () => {
+  const loadListsFromLocalStorage = useCallback(async () => {
     setLoading(true);
     try {
-      // Intenta cargar desde WebSQL primero
-      let storedLists: CheckList[] | null = await loadListsFromWebSQL();
-      if (!storedLists) {
-        // Si no hay datos en WebSQL, usa localStorage
+      let stored: CheckList[] | null = await loadListsFromWebSQL();
+      if (!stored) {
         const ls = localStorage.getItem(LS_KEY);
-        storedLists = ls ? JSON.parse(ls) : [];
+        stored = ls ? JSON.parse(ls) : [];
       }
-      if (storedLists) {
-        const parsedLists: CheckList[] = storedLists.map((list: any) => ({
+      if (stored) {
+        // Reconstruye Date y ordena items
+        const parsed: CheckList[] = stored.map((list: any) => ({
           ...list,
           created_at: new Date(list.created_at),
-          items: list.items.map((item: any) => ({
-            ...item,
-            created_at: new Date(item.created_at)
-          })).sort((a: Item, b: Item) => {
-            if (a.done === b.done) {
-              return a.created_at.getTime() - b.created_at.getTime();
-            }
-            return a.done ? 1 : -1;
-          })
+          items: list.items
+            .map((item: any) => ({
+              ...item,
+              created_at: new Date(item.created_at),
+            }))
+            .sort((a: Item, b: Item) => {
+              if (a.done === b.done) {
+                return a.created_at.getTime() - b.created_at.getTime();
+              }
+              return a.done ? 1 : -1;
+            }),
         }));
-        setLists(parsedLists.sort((a, b) => b.created_at.getTime() - a.created_at.getTime()));
+        setLists(
+          parsed.sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+        );
       } else {
         setLists([]);
       }
-    } catch (error) {
-      console.error("Error cargando listas:", error);
+    } catch (err) {
+      console.error("Error cargando listas:", err);
       setLists([]);
     } finally {
       setLoading(false);
@@ -170,26 +196,27 @@ const loadListsFromLocalStorage = useCallback(async () => {
     return lists.find((list) => list.slug === slug);
   };
 
-  const addTaskToList = (listSlug: string, taskMessage: string) => {
-    const newTask: Item = {
-      message: taskMessage.trim(),
+  const addTaskToList = (listSlug: string, message: string) => {
+    const task: Item = {
+      message: message.trim(),
       done: false,
       created_at: new Date(),
     };
-    const updatedLists = lists.map((list) => {
-      if (list.slug === listSlug) {
-        const updatedItems = [newTask, ...list.items].sort((a, b) => {
-          if (a.done === b.done) {
-            return a.created_at.getTime() - b.created_at.getTime();
+    const updated = lists.map((l) =>
+      l.slug === listSlug
+        ? {
+            ...l,
+            items: [task, ...l.items].sort((a, b) => {
+              if (a.done === b.done) {
+                return a.created_at.getTime() - b.created_at.getTime();
+              }
+              return a.done ? 1 : -1;
+            }),
           }
-          return a.done ? 1 : -1;
-        });
-        return { ...list, items: updatedItems };
-      }
-      return list;
-    });
-    setLists(updatedLists);
-    saveListsToLocalStorage(updatedLists);
+        : l
+    );
+    setLists(updated);
+    saveListsToLocalStorage(updated);
   };
 
   const editTaskInList = (
@@ -197,58 +224,43 @@ const loadListsFromLocalStorage = useCallback(async () => {
     taskIndex: number,
     newMessage: string
   ) => {
-    const updatedLists = lists.map((list) => {
-      if (list.slug === listSlug) {
-        const updatedItems = list.items.map((item, index) =>
-          index === taskIndex ? { ...item, message: newMessage.trim() } : item
-        );
-        return { ...list, items: updatedItems };
-      }
-      return list;
+    const updated = lists.map((l) => {
+      if (l.slug !== listSlug) return l;
+      const items = l.items.map((it, i) =>
+        i === taskIndex ? { ...it, message: newMessage.trim() } : it
+      );
+      return { ...l, items };
     });
-    setLists(updatedLists);
-    saveListsToLocalStorage(updatedLists);
+    setLists(updated);
+    saveListsToLocalStorage(updated);
   };
 
   const toggleTaskInList = (listSlug: string, taskIndex: number) => {
-    const updatedLists = lists.map((list) => {
-      if (list.slug === listSlug) {
-        if (taskIndex < 0 || taskIndex >= list.items.length) {
-          console.warn(
-            `Índice de tarea ${taskIndex} fuera de rango para la lista ${listSlug}`
-          );
-          return list;
+    const updated = lists.map((l) => {
+      if (l.slug !== listSlug) return l;
+      const items = l.items.map((it, i) =>
+        i === taskIndex ? { ...it, done: !it.done } : it
+      );
+      items.sort((a, b) => {
+        if (a.done === b.done) {
+          return a.created_at.getTime() - b.created_at.getTime();
         }
-        const updatedItems = list.items.map((item, index) =>
-          index === taskIndex ? { ...item, done: !item.done } : item
-        );
-
-        updatedItems.sort((a, b) => {
-          if (a.done === b.done) {
-            return a.created_at.getTime() - b.created_at.getTime();
-          }
-          return a.done ? 1 : -1;
-        });
-        return { ...list, items: updatedItems };
-      }
-      return list;
+        return a.done ? 1 : -1;
+      });
+      return { ...l, items };
     });
-    setLists(updatedLists);
-    saveListsToLocalStorage(updatedLists);
+    setLists(updated);
+    saveListsToLocalStorage(updated);
   };
 
   const deleteTaskFromList = (listSlug: string, taskIndex: number) => {
-    const updatedLists = lists.map((list) => {
-      if (list.slug === listSlug) {
-        const updatedItems = list.items.filter(
-          (_, index) => index !== taskIndex
-        );
-        return { ...list, items: updatedItems };
-      }
-      return list;
-    });
-    setLists(updatedLists);
-    saveListsToLocalStorage(updatedLists);
+    const updated = lists.map((l) =>
+      l.slug === listSlug
+        ? { ...l, items: l.items.filter((_, i) => i !== taskIndex) }
+        : l
+    );
+    setLists(updated);
+    saveListsToLocalStorage(updated);
   };
 
   return (
