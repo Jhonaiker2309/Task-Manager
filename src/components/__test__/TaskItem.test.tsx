@@ -11,12 +11,12 @@ const mockTask = {
   onDelete: vi.fn(),
 };
 
-describe('TaskItem Component', () => {
+describe('Componente TaskItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders correctly', () => {
+  it('renderiza correctamente', () => {
     render(
       <TaskItem
         message={mockTask.message}
@@ -28,19 +28,19 @@ describe('TaskItem Component', () => {
       />
     );
 
-    // Check if the task message is rendered
+    // Verifica que el mensaje de la tarea se muestre
     expect(screen.getByText(mockTask.message)).toBeInTheDocument();
 
-    // Check if the creation date is rendered
+    // Verifica que la fecha de creación se muestre
     expect(screen.getByText(/creada:/i)).toBeInTheDocument();
 
-    // Check if the "Completar", "Editar", and "Eliminar" buttons are rendered
+    // Verifica que los botones "Completar", "Editar" y "Eliminar" se muestren
     expect(screen.getByText('Completar')).toBeInTheDocument();
     expect(screen.getByText('Editar')).toBeInTheDocument();
     expect(screen.getByText('Eliminar')).toBeInTheDocument();
   });
 
-  it('renders correctly when the task is done', () => {
+  it('renderiza correctamente cuando la tarea está completada', () => {
     render(
       <TaskItem
         message={mockTask.message}
@@ -52,14 +52,14 @@ describe('TaskItem Component', () => {
       />
     );
 
-    // Check if the task message is rendered with line-through style
+    // Verifica que el mensaje tenga la clase de tachado
     expect(screen.getByText(mockTask.message)).toHaveClass('line-through');
 
-    // Check if the "Desmarcar" button is rendered
+    // Verifica que el botón "Desmarcar" se muestre
     expect(screen.getByText('Desmarcar')).toBeInTheDocument();
   });
 
-  it('calls onToggle when the "Completar" button is clicked', () => {
+  it('llama a onToggle al hacer click en "Completar"', () => {
     render(
       <TaskItem
         message={mockTask.message}
@@ -71,14 +71,11 @@ describe('TaskItem Component', () => {
       />
     );
 
-    // Simulate clicking the "Completar" button
     fireEvent.click(screen.getByText('Completar'));
-
-    // Check if onToggle is called
     expect(mockTask.onToggle).toHaveBeenCalled();
   });
 
-  it('calls onEdit when the "Editar" button is clicked', () => {
+  it('llama a onEdit al hacer click en "Editar"', () => {
     render(
       <TaskItem
         message={mockTask.message}
@@ -90,14 +87,11 @@ describe('TaskItem Component', () => {
       />
     );
 
-    // Simulate clicking the "Editar" button
     fireEvent.click(screen.getByText('Editar'));
-
-    // Check if onEdit is called
     expect(mockTask.onEdit).toHaveBeenCalled();
   });
 
-  it('calls onDelete when the "Eliminar" button is clicked', () => {
+  it('llama a onDelete al hacer click en "Eliminar"', () => {
     render(
       <TaskItem
         message={mockTask.message}
@@ -109,10 +103,7 @@ describe('TaskItem Component', () => {
       />
     );
 
-    // Simulate clicking the "Eliminar" button
     fireEvent.click(screen.getByText('Eliminar'));
-
-    // Check if onDelete is called
     expect(mockTask.onDelete).toHaveBeenCalled();
   });
 });

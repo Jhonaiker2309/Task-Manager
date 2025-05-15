@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EditTaskModal from '../EditTaskModal';
 
-describe('EditTaskModal - Validación de formulario', () => {
+describe('Componente EditTaskModal - Validación de formulario', () => {
   const mockOnClose = vi.fn();
   const mockOnSave = vi.fn();
   const currentMessage = 'Mensaje original';
@@ -23,17 +23,17 @@ describe('EditTaskModal - Validación de formulario', () => {
       />
     );
 
-  it('muestra error al guardar sin cambios', async () => {
+  it('muestra error al intentar guardar sin cambios', async () => {
     const user = userEvent.setup();
     renderComponent([currentMessage]);
 
     const textarea = screen.getByLabelText('Nuevo Mensaje de la Tarea');
     const saveButton = screen.getByRole('button', { name: 'Guardar Cambios' });
 
-    // Hacer el campo "dirty" sin cambiar el valor
-    await user.click(textarea); // Enfocar el campo
-    await user.keyboard(' ');   // Agregar un espacio
-    await user.keyboard('{Backspace}'); // Eliminar el espacio
+    // Marca el campo como "dirty" sin cambiar el valor real
+    await user.click(textarea); // Enfoca el campo
+    await user.keyboard(' ');   // Escribe un espacio
+    await user.keyboard('{Backspace}'); // Borra el espacio
 
     await user.click(saveButton);
 
@@ -44,17 +44,17 @@ describe('EditTaskModal - Validación de formulario', () => {
     });
   });
 
-  it('muestra error al usar mensaje existente', async () => {
+  it('muestra error si se usa un mensaje ya existente', async () => {
     const user = userEvent.setup();
     const existingMessages = ['Mensaje existente'];
     renderComponent(existingMessages);
 
     const textarea = screen.getByLabelText('Nuevo Mensaje de la Tarea');
 
-    // Simular edición completa
+    // Simula edición completa
     await user.clear(textarea);
     await user.type(textarea, 'Mensaje existente');
-    await user.tab(); // Cambiar foco para disparar validación
+    await user.tab(); // Cambia el foco para disparar la validación
 
     await waitFor(() => {
       expect(

@@ -13,13 +13,13 @@ const mockList = {
 const mockOnEdit = vi.fn();
 const mockOnDelete = vi.fn();
 
-describe("ListCard Component", () => {
+describe("Componente ListCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
-  it("renders correctly", () => {
+  it("renderiza correctamente", () => {
     render(
       <MemoryRouter>
         <ListCard list={mockList} onEdit={mockOnEdit} onDelete={mockOnDelete} />
@@ -35,7 +35,7 @@ describe("ListCard Component", () => {
     expect(screen.getByText("Eliminar")).toBeInTheDocument();
   });
 
-  it('calls onEdit when the "Editar Nombre" button is clicked', () => {
+  it('llama a onEdit al hacer click en "Editar Nombre"', () => {
     render(
       <MemoryRouter>
         <ListCard list={mockList} onEdit={mockOnEdit} onDelete={mockOnDelete} />
@@ -49,7 +49,7 @@ describe("ListCard Component", () => {
     });
   });
 
-  it('calls onDelete when the "Eliminar" button is clicked', () => {
+  it('llama a onDelete al hacer click en "Eliminar"', () => {
     render(
       <MemoryRouter>
         <ListCard list={mockList} onEdit={mockOnEdit} onDelete={mockOnDelete} />
@@ -62,8 +62,8 @@ describe("ListCard Component", () => {
       title: mockList.title,
     });
   });
- 
-  it("has correct link for details navigation", () => {
+
+  it("tiene el link correcto para navegar a detalles", () => {
     render(
       <MemoryRouter>
         <ListCard list={mockList} onEdit={mockOnEdit} onDelete={mockOnDelete} />

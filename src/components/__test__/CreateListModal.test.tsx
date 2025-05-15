@@ -9,36 +9,33 @@ describe('CreateListModal', () => {
 
     render(<CreateListModal isOpen={true} onClose={mockClose} />);
 
-    // 1) Verificar que el botón está deshabilitado inicialmente
+    // Verifica que el botón de crear está deshabilitado al inicio
     const submitButton = screen.getByRole('button', { name: /crear lista/i });
     expect(submitButton).toBeDisabled();
 
-    // 2) Simular interacción completa con el campo
+    // Simula interacción: escribe y borra para activar validación
     const titleInput = screen.getByLabelText(/título/i);
-    
-    // Escribir y borrar para activar validación
     await user.type(titleInput, 'a');
     await user.clear(titleInput);
 
-    // 3) Verificar mensaje de error
+    // Verifica mensaje de error por campo vacío
     expect(await screen.findByText(/el título es obligatorio/i)).toBeInTheDocument();
     expect(submitButton).toBeDisabled();
 
-    // 4) Probar título largo
+    // Prueba con un título demasiado largo
     await user.type(titleInput, 'a'.repeat(51));
     expect(await screen.findByText(/máximo 50 caracteres/i)).toBeInTheDocument();
     expect(submitButton).toBeDisabled();
 
-    // 5) Titulo válido
+    // Ingresa un título válido
     await user.clear(titleInput);
     await user.type(titleInput, 'Lista válida');
-    
-    // Esperar validación async
+
+    // Espera a que el botón se habilite y envía el formulario
     await waitFor(() => expect(submitButton).toBeEnabled());
-    
     await user.click(submitButton);
 
-    // Verificar que se cerró el modal
+    // Verifica que se haya llamado al cierre del modal
     await waitFor(() => expect(mockClose).toHaveBeenCalled());
   });
 });

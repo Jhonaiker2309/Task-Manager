@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DeleteListModal from '../DeleteListModal';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock del contexto
+// Mock del contexto de listas
 const mockDeleteList = vi.fn();
 vi.mock('../../contexts/ListContext', () => ({
   useLists: () => ({
@@ -10,7 +10,7 @@ vi.mock('../../contexts/ListContext', () => ({
   }),
 }));
 
-describe('DeleteListModal Component', () => {
+describe('Componente DeleteListModal', () => {
   const mockOnClose = vi.fn();
   const mockListSlug = 'test-list';
   const mockListTitle = 'Test List';
@@ -19,7 +19,7 @@ describe('DeleteListModal Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders correctly when open', () => {
+  it('renderiza correctamente cuando está abierto', () => {
     render(
       <DeleteListModal
         isOpen={true}
@@ -34,7 +34,7 @@ describe('DeleteListModal Component', () => {
     expect(screen.getByText('Eliminar Lista')).toBeInTheDocument();
   });
 
-  it('does not render when not open', () => {
+  it('no renderiza nada cuando no está abierto', () => {
     const { container } = render(
       <DeleteListModal
         isOpen={false}
@@ -46,7 +46,7 @@ describe('DeleteListModal Component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('calls onClose when the Cancel button is clicked', () => {
+  it('llama a onClose al hacer click en el botón Cancelar', () => {
     render(
       <DeleteListModal
         isOpen={true}
@@ -59,7 +59,7 @@ describe('DeleteListModal Component', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it('calls deleteList and onClose when the Delete button is clicked', async () => {
+  it('llama a deleteList y onClose al hacer click en el botón Eliminar Lista', async () => {
     render(
       <DeleteListModal
         isOpen={true}
@@ -77,7 +77,7 @@ describe('DeleteListModal Component', () => {
     });
   });
 
-  it('calls onClose when clicking background', () => {
+  it('llama a onClose al hacer click en el fondo del modal', () => {
     render(
       <DeleteListModal
         isOpen={true}

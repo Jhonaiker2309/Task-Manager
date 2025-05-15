@@ -7,19 +7,19 @@ describe('App - Flujo principal', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    // Paso 1: abrir el modal de creación
+    // Abre el modal para crear una nueva lista
     await user.click(
       await screen.findByRole('button', { name: /crear nueva lista/i })
     );
 
-    // Paso 2: rellenar formulario
+    // Escribe el título de la nueva lista
     const titleInput = await screen.findByLabelText(/título de la lista/i);
     await user.type(titleInput, 'Mi Super Lista');
 
-    // Paso 3: enviar formulario
+    // Envía el formulario para crear la lista
     await user.click(screen.getByRole('button', { name: /crear lista/i }));
 
-    // Verificación 1: debe aparecer la tarjeta con el título
+    // Verifica que la tarjeta de la lista se muestre con el título correcto
     const cardTitle = await screen.findByRole(
       'heading',
       { level: 2, name: /mi super lista/i },
@@ -27,17 +27,17 @@ describe('App - Flujo principal', () => {
     );
     expect(cardTitle).toBeInTheDocument();
 
-    // Verificación 2: debe persistir en WebSQL (debug)
+    // Verifica que la lista se haya guardado en WebSQL (usando el debug)
     const lists = JSON.parse(
       (await screen.findByTestId('debug-websql')).textContent || '[]'
     );
     expect(lists).toHaveLength(1);
     expect(lists[0].title).toBe('Mi Super Lista');
 
-    // Paso 4: navegar a detalles
+    // Navega a la vista de detalles de la lista
     await user.click(screen.getByRole('link', { name: /ver detalles/i }));
 
-    // Verificación final: debe mostrar el <h2> de detalles
+    // Verifica que el encabezado de detalles muestre el título de la lista
     const detailHeading = await screen.findByRole('heading', {
       level: 1,
       name: /mi super lista/i

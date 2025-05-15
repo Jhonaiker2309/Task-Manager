@@ -1,14 +1,14 @@
 import { render as rtlRender, screen } from '@testing-library/react';
 import { render } from '../../tests/test-utils';
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import userEvent from '@testing-library/user-event';;
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
 import { ListProvider } from '../../contexts/ListContext';
 import ListDetails from '../ListDetails';
 import App from '../../App';
 
 describe('ListDetails — página no encontrada', () => {
   it('muestra mensaje y link de volver cuando el slug no existe', async () => {
-    // No usar el helper render para evitar doble <Router>
+    // Renderiza ListDetails con un slug inválido, sin usar el helper para evitar doble Router
     rtlRender(
       <MemoryRouter initialEntries={['/list/slug-invalido']}>
         <ListProvider>
@@ -19,12 +19,12 @@ describe('ListDetails — página no encontrada', () => {
       </MemoryRouter>
     );
 
-    // Verifica el mensaje de error
+    // Verifica que se muestre el mensaje de "lista no encontrada"
     expect(
       await screen.findByRole('heading', { name: /lista no encontrada/i })
     ).toBeInTheDocument();
 
-    // El link "Volver" apunta a "/"
+    // Verifica que el link "Volver" apunte a la ruta raíz
     const volver = screen.getByRole('link', { name: /volver/i });
     expect(volver).toHaveAttribute('href', '/');
   });
@@ -37,7 +37,7 @@ describe('ListDetails — flujo de usuario', () => {
     // Renderiza la aplicación completa (incluye router, contexto y DebugWebSQL)
     render(<App />);
 
-    // 1) Crear nueva lista desde Home
+    // Crea una nueva lista desde la pantalla principal
     await user.click(
       await screen.findByRole('button', { name: /crear nueva lista/i })
     );
@@ -47,15 +47,15 @@ describe('ListDetails — flujo de usuario', () => {
     );
     await user.click(screen.getByRole('button', { name: /crear lista/i }));
 
-    // 2) Navegar a detalles
+    // Navega a la vista de detalles de la lista recién creada
     await user.click(await screen.findByRole('link', { name: /ver detalles/i }));
 
-    // 3) Añadir una nueva tarea
+    // Añade una nueva tarea en la lista de detalles
     const taskInput = await screen.findByPlaceholderText(/ej: comprar leche/i);
     await user.type(taskInput, 'Tarea de prueba');
     await user.click(screen.getByRole('button', { name: /añadir tarea/i }));
 
-    // 4) Verificar que la tarea aparece en la lista
+    // Verifica que la tarea aparece en la lista de tareas
     const taskSpan = await screen.findByText(/tarea de prueba/i, {
       selector: 'span.text-sm.text-slate-300'
     });

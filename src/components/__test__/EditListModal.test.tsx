@@ -3,7 +3,7 @@ import { useLists } from "../../contexts/ListContext";
 import EditListModal from "../EditListModal";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// Mock del contexto
+// Mock del contexto de listas
 vi.mock("../../contexts/ListContext", () => ({
   useLists: vi.fn(() => ({
     lists: [],
@@ -11,7 +11,7 @@ vi.mock("../../contexts/ListContext", () => ({
   })),
 }));
 
-describe("EditListModal Component", () => {
+describe("Componente EditListModal", () => {
   const mockOnClose = vi.fn();
   const mockCurrentTitle = "Original Title";
   const mockListSlug = "test-list-slug";
@@ -25,7 +25,7 @@ describe("EditListModal Component", () => {
     }));
   });
 
-  it("renders correctly when open", () => {
+  it("renderiza correctamente cuando está abierto", () => {
     render(
       <EditListModal
         isOpen={true}
@@ -41,7 +41,7 @@ describe("EditListModal Component", () => {
     expect(screen.getByText("Guardar Cambios")).toBeInTheDocument();
   });
 
-  it("does not render when not open", () => {
+  it("no renderiza nada cuando no está abierto", () => {
     const { container } = render(
       <EditListModal
         isOpen={false}
@@ -54,7 +54,7 @@ describe("EditListModal Component", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("calls onClose when the Cancel button is clicked", () => {
+  it("llama a onClose al hacer click en el botón Cancelar", () => {
     render(
       <EditListModal
         isOpen={true}
@@ -68,7 +68,7 @@ describe("EditListModal Component", () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it("calls updateListTitle and onClose when saving valid title", async () => {
+  it("llama a updateListTitle y onClose al guardar un título válido", async () => {
     render(
       <EditListModal
         isOpen={true}
@@ -82,30 +82,29 @@ describe("EditListModal Component", () => {
     const input = screen.getByLabelText("Nuevo Título");
     const saveButton = screen.getByText("Guardar Cambios");
 
-    // Simular interacción completa
+    // Simula interacción completa
     fireEvent.change(input, { target: { value: newTitle } });
     fireEvent.blur(input);
 
-    // Esperar validación y habilitación del botón
+    // Espera validación y habilitación del botón
     await waitFor(() => {
       expect(saveButton).not.toBeDisabled();
     });
 
-    // Disparar el envío del formulario
+    // Dispara el envío del formulario
     fireEvent.click(saveButton);
 
     await waitFor(() => {
       expect(mockUpdateListTitle).toHaveBeenCalledWith(
         mockListSlug,
-        newTitle.trim() // El componente usa trim() en el onSubmit
+        newTitle.trim()
       );
-
       expect(mockOnClose).toHaveBeenCalled();
-
       expect(input).toHaveValue(newTitle);
     });
   });
-  it("shows validation errors correctly", async () => {
+
+  it("muestra los mensajes de validación correctamente", async () => {
     (useLists as any).mockImplementation(() => ({
       lists: [{ slug: "other-list", title: "Existing Title" }],
       updateListTitle: mockUpdateListTitle,
@@ -122,14 +121,14 @@ describe("EditListModal Component", () => {
 
     const input = screen.getByLabelText("Nuevo Título");
 
-    // Test empty title
+    // Campo vacío
     fireEvent.change(input, { target: { value: "" } });
     fireEvent.blur(input);
     await waitFor(() => {
       expect(screen.getByText("El título es obligatorio.")).toBeInTheDocument();
     });
 
-    // Test same title
+    // Mismo título
     fireEvent.change(input, { target: { value: mockCurrentTitle } });
     fireEvent.blur(input);
     await waitFor(() => {
@@ -138,7 +137,7 @@ describe("EditListModal Component", () => {
       ).toBeInTheDocument();
     });
 
-    // Test existing title
+    // Título existente
     fireEvent.change(input, { target: { value: "Existing Title" } });
     fireEvent.blur(input);
     await waitFor(() => {
@@ -148,7 +147,7 @@ describe("EditListModal Component", () => {
     });
   });
 
-  it("calls onClose when clicking background", () => {
+  it("llama a onClose al hacer click en el fondo del modal", () => {
     render(
       <EditListModal
         isOpen={true}
