@@ -67,6 +67,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
+      data-testid="modal-background"
       onClick={onClose}
     >
       <div
