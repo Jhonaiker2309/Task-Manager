@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import DeleteTaskModal from '../DeleteTaskModal';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-describe('DeleteTaskModal Component', () => {
+describe('Componente DeleteTaskModal', () => {
   const mockOnClose = vi.fn();
   const mockOnConfirm = vi.fn();
   const mockTaskMessage = 'Test Task Message';
@@ -11,7 +11,7 @@ describe('DeleteTaskModal Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders correctly when open', () => {
+  it('renderiza correctamente cuando está abierto', () => {
     render(
       <DeleteTaskModal
         isOpen={true}
@@ -21,18 +21,18 @@ describe('DeleteTaskModal Component', () => {
       />
     );
 
-    // Check if the modal title is rendered
+    // Verifica que el título del modal se muestre
     expect(screen.getByText('Confirmar Eliminación de Tarea')).toBeInTheDocument();
 
-    // Check if the confirmation message is rendered with the task message
+    // Verifica que el mensaje de confirmación muestre el mensaje de la tarea
     expect(screen.getByText(`"${mockTaskMessage}"`)).toBeInTheDocument();
 
-    // Check if the Cancel and Delete buttons are rendered
+    // Verifica que los botones Cancelar y Eliminar Tarea se muestren
     expect(screen.getByText('Cancelar')).toBeInTheDocument();
     expect(screen.getByText('Eliminar Tarea')).toBeInTheDocument();
   });
 
-  it('does not render when not open', () => {
+  it('no renderiza nada cuando no está abierto', () => {
     const { container } = render(
       <DeleteTaskModal
         isOpen={false}
@@ -42,11 +42,11 @@ describe('DeleteTaskModal Component', () => {
       />
     );
 
-    // Check if the modal is not rendered
+    // Verifica que el modal no se renderiza
     expect(container.firstChild).toBeNull();
   });
 
-  it('calls onClose when the Cancel button is clicked', () => {
+  it('llama a onClose al hacer click en el botón Cancelar', () => {
     render(
       <DeleteTaskModal
         isOpen={true}
@@ -56,14 +56,14 @@ describe('DeleteTaskModal Component', () => {
       />
     );
 
-    // Simulate clicking the Cancel button
+    // Simula click en Cancelar
     fireEvent.click(screen.getByText('Cancelar'));
 
-    // Check if onClose is called
+    // Verifica que se llamó a onClose
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it('calls onClose when the modal background is clicked', () => {
+  it('llama a onClose al hacer click en el fondo del modal', () => {
     render(
       <DeleteTaskModal
         isOpen={true}
@@ -73,10 +73,10 @@ describe('DeleteTaskModal Component', () => {
       />
     );
 
-    // Simulate clicking the modal background
+    // Simula click en el fondo del modal
     fireEvent.click(screen.getByTestId('modal-background'));
 
-    // Check if onClose is called
+    // Verifica que se llamó a onClose
     expect(mockOnClose).toHaveBeenCalled();
   });
 });
