@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import CreateListModal from "../components/CreateListModal";
 import DeleteListModal from "../components/DeleteListModal";
 import EditListModal from "../components/EditListModal";
@@ -6,7 +6,7 @@ import { useLists } from "../contexts/ListContext";
 import ListCard from "../components/ListCard";
 
 const Home: React.FC = () => {
-  const { lists } = useLists();
+  const { lists, fetchLists } = useLists();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -21,6 +21,29 @@ const Home: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">(
     "newToOld"
   );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported: any = JSON.parse(reader.result as string);
+        if (Array.isArray(imported)) {
+          localStorage.setItem("checkLists", JSON.stringify(imported));
+          fetchLists();
+        } else {
+          console.error(
+            "Formato JSON inválido, se esperaba un array de listas"
+          );
+        }
+      } catch (err) {
+        console.error("Error parseando JSON:", err);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const handleOpenCreateModal = () => setIsModalOpen(true);
   const handleCloseCreateModal = () => setIsModalOpen(false);
@@ -66,12 +89,48 @@ const Home: React.FC = () => {
           Organiza tu día, una tarea a la vez.
         </p>
       </header>
-      <button
-        onClick={handleOpenCreateModal}
-        className="my-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg"
-      >
-        Crear Nueva Lista
-      </button>
+      <div className="flex flex-col sm:flex-row justify-between items-center my-4">
+        <button
+          onClick={handleOpenCreateModal}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-5 rounded-lg mb-4 sm:mb-0"
+        >
+          Crear Nueva Lista
+        </button>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={handleImportJson}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title={
+              "El JSON debe tener esta estructura:\n" +
+              "[\n" +
+              "  {\n" +
+              "    slug: string,\n" +
+              "    title: string,\n" +
+              "    created_at: string (ISO),\n" +
+              "    items: [\n" +
+              "      {\n" +
+              "        message: string,\n" +
+              "        done: boolean,\n" +
+              "        created_at: string (ISO)\n" +
+              "      },\n" +
+              "      …\n" +
+              "    ]\n" +
+              "  },\n" +
+              "  …\n" +
+              "]"
+            }
+            className="ml-0 sm:ml-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-5 rounded-lg"
+          >
+            Importar JSON
+          </button>
+        </div>
+      </div>
       {lists.length > 1 && (
         <div className="flex space-x-2 order-2 sm:order-none mb-4">
           <button
