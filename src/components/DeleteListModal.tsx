@@ -1,3 +1,24 @@
+/**
+ * Modal component for confirming the deletion of a checklist.
+ *
+ * Features:
+ * - Displays a modal dialog asking the user to confirm deletion of a checklist.
+ * - Shows the checklist title (if provided) in the confirmation message.
+ * - Calls `deleteList` from context and closes the modal on confirmation.
+ * - Provides Cancel and Delete buttons.
+ * - Accessible and responsive modal layout.
+ *
+ * Props:
+ * - isOpen: Controls modal visibility.
+ * - onClose: Callback to close the modal.
+ * - listSlug: Slug of the checklist to delete (optional).
+ * - listTitle: Title of the checklist to display in the confirmation (optional).
+ *
+ * UI:
+ * - Confirmation message with checklist title.
+ * - Cancel and Delete buttons.
+ * - Modal closes on background click or Cancel.
+ */
 import React from 'react';
 import { useLists } from '../contexts/ListContext';
 

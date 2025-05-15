@@ -1,3 +1,28 @@
+/**
+ * Home page component for the checklist application.
+ *
+ * Features:
+ * - Displays all user-created checklists with pagination and sorting.
+ * - Allows creating, editing, and deleting lists via modals.
+ * - Supports importing lists from a JSON file.
+ * - Provides sorting by newest or oldest lists.
+ * - Responsive grid layout for displaying lists.
+ *
+ * Hooks used:
+ * - useLists: Provides access to the global lists state.
+ * - useFileImport: Handles importing lists from a JSON file.
+ * - useSortedLists: Returns lists sorted by the selected order.
+ * - usePagination: Manages pagination state and logic.
+ * - useModal: Controls modal open/close state and payloads.
+ *
+ * UI:
+ * - "Crear Nueva Lista" button opens the create modal.
+ * - "Importar JSON" button opens a file picker for importing lists.
+ * - Sorting buttons toggle between "Más Recientes" and "Más Antiguas".
+ * - Pagination controls for navigating between pages of lists.
+ * - Renders ListCard components for each list on the current page.
+ * - Modals for creating, editing, and deleting lists.
+ */
 import React, { useState } from "react";
 import CreateListModal from "../components/CreateListModal";
 import DeleteListModal from "../components/DeleteListModal";

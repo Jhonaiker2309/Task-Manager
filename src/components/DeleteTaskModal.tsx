@@ -1,3 +1,24 @@
+/**
+ * Modal component for confirming the deletion of a task.
+ *
+ * Features:
+ * - Displays a modal dialog asking the user to confirm deletion of a task.
+ * - Shows the task message (if provided) in the confirmation message.
+ * - Calls the provided `onConfirm` callback and closes the modal on confirmation.
+ * - Provides Cancel and Delete buttons.
+ * - Accessible and responsive modal layout.
+ *
+ * Props:
+ * - isOpen: Controls modal visibility.
+ * - onClose: Callback to close the modal.
+ * - onConfirm: Callback to confirm deletion.
+ * - taskMessage: The message of the task to display in the confirmation (optional).
+ *
+ * UI:
+ * - Confirmation message with task message.
+ * - Cancel and Delete buttons.
+ * - Modal closes on background click or Cancel.
+ */
 import React from 'react';
 
 interface DeleteTaskModalProps {

@@ -1,3 +1,23 @@
+/**
+ * Task item component for displaying a single task with actions.
+ *
+ * Features:
+ * - Shows the task message, completion state, and creation date.
+ * - Provides buttons to toggle completion, edit, and delete the task.
+ * - Visual feedback for completed tasks (line-through and color change).
+ *
+ * Props:
+ * - message: The task message to display.
+ * - done: Whether the task is completed.
+ * - createdAt: Date when the task was created.
+ * - onToggle: Callback to toggle the completion state.
+ * - onEdit: Callback to edit the task.
+ * - onDelete: Callback to delete the task.
+ *
+ * UI:
+ * - Responsive layout with accessible buttons.
+ * - Color and style changes based on task state.
+ */
 import React from "react";
 
 interface TaskItemProps {

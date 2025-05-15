@@ -1,3 +1,18 @@
+/**
+ * Custom hook for importing a single checklist from a JSON file.
+ *
+ * Features:
+ * - Reads and parses a JSON file to import a checklist.
+ * - Validates the JSON structure (expects { title, items }).
+ * - Ensures no duplicate tasks within the imported list.
+ * - Prevents importing a list with a slug that already exists.
+ * - Notifies the user of success or specific errors using toast notifications.
+ * - Updates the checklist state and persists to localStorage.
+ *
+ * @param {CheckList[]} lists - The current array of checklists.
+ * @param {React.Dispatch<React.SetStateAction<CheckList[]>>} setLists - State setter for checklists.
+ * @returns {function} importList - Function to call with a File to import.
+ */
 import type { CheckList, Item } from "../types";
 import { generateSlug } from "../utils";
 import notify from "../utils/notify";
