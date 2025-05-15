@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLists } from "../contexts/ListContext";
 import EditTaskModal from "../components/EditTaskModal";
 import DeleteTaskModal from "../components/DeleteTaskModal";
 import TaskItem from "../components/TaskItem";
-
 
 const ListDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -29,6 +28,10 @@ const ListDetails: React.FC = () => {
     message: string;
   } | null>(null);
 
+  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">(
+    "newToOld"
+  );
+
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskMessage.trim()) {
@@ -43,7 +46,15 @@ const ListDetails: React.FC = () => {
 
   const handleToggleTask = (taskIndex: number) => {
     if (list) {
-      toggleTaskInList(list.slug, taskIndex);
+      const originalItem = sortedItems[taskIndex];
+      const originalIndex = list.items.findIndex(
+        (item) =>
+          item.created_at === originalItem.created_at &&
+          item.message === originalItem.message
+      );
+      if (originalIndex !== -1) {
+        toggleTaskInList(list.slug, originalIndex);
+      }
     }
   };
 
@@ -76,6 +87,18 @@ const ListDetails: React.FC = () => {
     }
     handleCloseDeleteTaskModal();
   };
+
+  const sortedItems = useMemo(() => {
+    if (!list) return [];
+    const itemsCopy = [...list.items]; // Crear una copia para no mutar el estado original
+    return itemsCopy.sort((a, b) => {
+      if (sortOrder === "newToOld") {
+        return b.created_at.getTime() - a.created_at.getTime();
+      } else {
+        return a.created_at.getTime() - b.created_at.getTime();
+      }
+    });
+  }, [list, sortOrder]);
 
   if (!list) {
     return (
@@ -141,13 +164,33 @@ const ListDetails: React.FC = () => {
 
       <section>
         <h3 className="text-lg font-semibold mb-3 text-slate-200">Tareas</h3>
-        {list.items.length === 0 ? (
+        <button
+          onClick={() => setSortOrder("newToOld")}
+          className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors mr-2 ${
+            sortOrder === "newToOld"
+              ? "bg-purple-600 text-white"
+              : "bg-slate-600 text-slate-300 hover:bg-slate-500"
+          }`}
+        >
+          Más Recientes
+        </button>
+        <button
+          onClick={() => setSortOrder("oldToNew")}
+          className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
+            sortOrder === "oldToNew"
+              ? "bg-purple-600 text-white"
+              : "bg-slate-600 text-slate-300 hover:bg-slate-500"
+          }`}
+        >
+          Más Antiguas
+        </button>
+        {sortedItems.length === 0 ? (
           <p className="text-slate-400">
             No hay tareas en esta lista. ¡Añade una para empezar!
           </p>
         ) : (
-          <ul className="space-y-3">
-            {list.items.map((item, index) => (
+          <ul className="space-y-3 mt-4">
+            {sortedItems.map((item, index) => (
               <TaskItem
                 key={index}
                 message={item.message}
