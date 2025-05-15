@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useLists } from '../contexts/ListContext';
+import React, { useMemo, useEffect } from "react";
+import { useLists } from "../contexts/ListContext";
+import { useForm } from "react-hook-form";
 
 interface EditListModalProps {
   isOpen: boolean;
@@ -8,38 +9,46 @@ interface EditListModalProps {
   listSlug: string;
 }
 
+type FormValues = {
+  title: string;
+};
+
 const EditListModal: React.FC<EditListModalProps> = ({
   isOpen,
   onClose,
   currentTitle,
   listSlug,
 }) => {
-  const { updateListTitle } = useLists();
-  const [newTitle, setNewTitle] = useState(currentTitle);
-  const [error, setError] = useState('');
+  const { lists, updateListTitle } = useLists();
+  const existingTitles = useMemo(
+    () =>
+      lists
+        .filter((l) => l.slug !== listSlug)
+        .map((l) => l.title.toLowerCase()),
+    [lists, listSlug]
+  );
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<FormValues>({
+    mode: "onChange",
+    defaultValues: { title: currentTitle },
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setNewTitle(currentTitle);
-      setError('');
+      reset({ title: currentTitle });
     }
-  }, [isOpen, currentTitle]);
+  }, [isOpen, currentTitle, reset]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTitle.trim() === '') {
-      setError('El título de la lista no puede estar vacío.');
-      return;
-    }
-    if (newTitle.trim() === currentTitle) {
-      onClose();
-      return;
-    }
-    updateListTitle(listSlug, newTitle.trim());
+  const onSubmit = ({ title }: FormValues) => {
+    const trimmed = title.trim();
+    updateListTitle(listSlug, trimmed);
     onClose();
   };
 
@@ -53,7 +62,9 @@ const EditListModal: React.FC<EditListModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-white">Editar Nombre de la Lista</h2>
+          <h2 className="text-2xl font-semibold text-white">
+            Editar Nombre de la Lista
+          </h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-200 transition-colors text-3xl leading-none"
@@ -62,27 +73,41 @@ const EditListModal: React.FC<EditListModalProps> = ({
             &times;
           </button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-5">
-            <label htmlFor="listNewTitle" className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label
+              htmlFor="listNewTitle"
+              className="block text-sm font-medium text-slate-300 mb-1.5"
+            >
               Nuevo Título
             </label>
             <input
-              type="text"
-              id="listNewTitle"
-              value={newTitle}
-              onChange={(e) => {
-                setNewTitle(e.target.value);
-                if (error) setError('');
-              }}
+              id="title"
+              {...register("title", {
+                required: "El título es obligatorio.",
+                maxLength: { value: 50, message: "Máximo 50 caracteres." },
+                validate: {
+                  notEmpty: (v) =>
+                    v.trim().length > 0 || "No puede estar vacío.",
+                  notChanged: (v) =>
+                    v.trim() !== currentTitle.trim() ||
+                    "No hay cambios que guardar.",
+                  notTaken: (v) =>
+                    !existingTitles.includes(v.trim().toLowerCase()) ||
+                    "Ya existe una lista con ese nombre.",
+                },
+              })}
               className={`w-full px-4 py-3 bg-slate-700 border ${
-                error ? 'border-red-500' : 'border-slate-600'
+                errors.title ? "border-red-500" : "border-slate-600"
               } rounded-md text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-shadow`}
               placeholder="Ej: Mis Proyectos Importantes"
-              required
               autoFocus
             />
-            {error && <p className="text-red-500 text-xs mt-1.5">{error}</p>}
+            {errors.title && (
+              <p className="text-red-500 text-xs mt-1.5">
+                {errors.title.message}
+              </p>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-4">
             <button
@@ -94,6 +119,7 @@ const EditListModal: React.FC<EditListModalProps> = ({
             </button>
             <button
               type="submit"
+              disabled={!isValid}
               className="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md shadow-md transition duration-150 ease-in-out transform hover:scale-105"
             >
               Guardar Cambios

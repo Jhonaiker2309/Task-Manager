@@ -26,5 +26,6 @@ export interface ListContextType {
   addTaskToList: (listSlug: string, taskMessage: string) => void;
   toggleTaskInList: (listSlug: string, taskIndex: number) => void;
   editTaskInList: (listSlug: string, taskIndex: number, newMessage: string) => void;
-  deleteTaskFromList: (listSlug: string, taskIndex: number) => void; 
+  deleteTaskFromList: (listSlug: string, taskIndex: number) => void;
+  importLists: (file: File) => void;
 }

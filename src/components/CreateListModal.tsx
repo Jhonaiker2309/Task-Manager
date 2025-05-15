@@ -1,36 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useLists } from '../contexts/ListContext';
+import { useForm } from 'react-hook-form';
 
 interface CreateListModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type FormValues = {
+  title: string;
+};
+
 const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose }) => {
-  const { createList } = useLists();
-  const [title, setTitle] = useState('');
-  const [error, setError] = useState('');
+  const { lists, createList } = useLists();
+  const existingTitles = useMemo(
+    () => lists.map((l) => l.title.toLowerCase()),
+    [lists]
+  );
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<FormValues>({
+    mode: 'onChange',
+    defaultValues: { title: '' },
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setTitle('');
-      setError('');
+      reset({ title: '' });
     }
-  }, [isOpen]);
+  }, [isOpen, reset]);
 
-  if (!isOpen) {
-    return null;
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.trim() === '') {
-      setError('El título de la lista no puede estar vacío.');
-      return;
-    }
-    createList(title.trim());
+  const onSubmit = ({ title }: FormValues) => {
+    const trimmed = title.trim();
+    createList(trimmed);
     onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -51,7 +61,7 @@ const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose }) =>
             &times;
           </button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-5">
             <label htmlFor="listTitle" className="block text-sm font-medium text-slate-300 mb-1.5">
               Título de la Lista
@@ -59,19 +69,22 @@ const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose }) =>
             <input
               type="text"
               id="listTitle"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (error) setError('');
-              }}
+              {...register('title', {
+                required: 'El título es obligatorio.',
+                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                validate: (v) =>
+                  !existingTitles.includes(v.trim().toLowerCase()) ||
+                  'Ya existe una lista con ese nombre.',
+              })}
               className={`w-full px-4 py-3 bg-slate-700 border ${
-                error ? 'border-red-500' : 'border-slate-600'
+                errors.title ? 'border-red-500' : 'border-slate-600'
               } rounded-md text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-shadow`}
               placeholder="Ej: Tareas del Hogar"
-              required
               autoFocus
             />
-            {error && <p className="text-red-500 text-xs mt-1.5">{error}</p>}
+            {errors.title && (
+              <p className="text-red-500 text-xs mt-1.5">{errors.title.message}</p>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-4">
             <button
@@ -83,7 +96,8 @@ const CreateListModal: React.FC<CreateListModalProps> = ({ isOpen, onClose }) =>
             </button>
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md shadow-md transition duration-150 ease-in-out transform hover:scale-105"
+              className="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-md"
+              disabled={!isValid}
             >
               Crear Lista
             </button>
