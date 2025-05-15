@@ -75,6 +75,7 @@ const EditListModal: React.FC<EditListModalProps> = ({
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out"
+      data-testid="modal-background"
       onClick={onClose}
     >
       <div
@@ -96,7 +97,7 @@ const EditListModal: React.FC<EditListModalProps> = ({
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-5">
             <label
-              htmlFor="listNewTitle"
+              htmlFor="title"
               className="block text-sm font-medium text-slate-300 mb-1.5"
             >
               Nuevo Título
