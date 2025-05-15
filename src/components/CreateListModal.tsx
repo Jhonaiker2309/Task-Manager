@@ -1,3 +1,21 @@
+/**
+ * Modal component for creating a new checklist.
+ *
+ * Features:
+ * - Displays a modal dialog for entering a new checklist title.
+ * - Validates input: required, max 50 characters, and unique title.
+ * - Calls `createList` from context and closes modal on submit.
+ * - Resets form when opened.
+ *
+ * Props:
+ * - isOpen: Controls modal visibility.
+ * - onClose: Callback to close the modal.
+ *
+ * UI:
+ * - Input for checklist title with validation feedback.
+ * - Cancel and Create buttons.
+ * - Accessible and responsive modal layout.
+ */
 import React, { useMemo, useEffect } from 'react';
 import { useLists } from '../contexts/ListContext';
 import { useForm } from 'react-hook-form';

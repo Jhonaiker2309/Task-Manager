@@ -1,3 +1,23 @@
+/**
+ * Modal component for editing the title of an existing checklist.
+ *
+ * Features:
+ * - Displays a modal dialog for editing a checklist's title.
+ * - Validates input: required, max 50 characters, unique title, not empty, and must be different from the current title.
+ * - Calls `updateListTitle` from context and closes modal on submit.
+ * - Resets form to current title when opened.
+ *
+ * Props:
+ * - isOpen: Controls modal visibility.
+ * - onClose: Callback to close the modal.
+ * - currentTitle: The current title of the checklist.
+ * - listSlug: Slug of the checklist to edit.
+ *
+ * UI:
+ * - Input for new checklist title with validation feedback.
+ * - Cancel and Save buttons.
+ * - Accessible and responsive modal layout.
+ */
 import React, { useMemo, useEffect } from "react";
 import { useLists } from "../contexts/ListContext";
 import { useForm } from "react-hook-form";

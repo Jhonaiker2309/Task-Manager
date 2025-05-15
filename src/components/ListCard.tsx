@@ -1,3 +1,20 @@
+/**
+ * Card component for displaying a checklist summary and actions.
+ *
+ * Features:
+ * - Shows checklist title, creation date, and task count.
+ * - Provides buttons to view details, edit the title, download as JSON, and delete the checklist.
+ * - Download button exports the checklist (without slug) as a JSON file named after the title.
+ *
+ * Props:
+ * - list: The checklist object to display.
+ * - onEdit: Callback to trigger editing the checklist title.
+ * - onDelete: Callback to trigger deletion of the checklist.
+ *
+ * UI:
+ * - Responsive card layout with accessible buttons and links.
+ * - Visual feedback on hover and focus.
+ */
 import React from "react";
 import { Link } from "react-router-dom";
 import type { CheckList } from "../types";

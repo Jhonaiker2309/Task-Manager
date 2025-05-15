@@ -1,3 +1,18 @@
+/**
+ * Custom hook for managing persisted checklists using both WebSQL and localStorage.
+ *
+ * Features:
+ * - Loads checklists from WebSQL if available, otherwise falls back to localStorage.
+ * - Persists checklist changes to both WebSQL and localStorage.
+ * - Handles date parsing and sorting for lists and their items.
+ * - Provides loading state and a manual fetchLists function to reload data.
+ *
+ * @returns {object} An object containing:
+ *   - lists: The current array of checklists.
+ *   - setLists: State setter for checklists (persists changes).
+ *   - loading: Boolean indicating if lists are being loaded.
+ *   - fetchLists: Function to manually reload lists from storage.
+ */
 import { useState, useCallback, useEffect } from "react";
 import type { CheckList, Item } from "../types";
 import { loadListsFromWebSQL, saveListsToWebSQL } from "../utils";
@@ -13,6 +28,7 @@ export function usePersistedLists(): {
   const [lists, setListsState] = useState<CheckList[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Persist lists to both localStorage and WebSQL
   const persist = (current: CheckList[]) => {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(current));
@@ -22,6 +38,7 @@ export function usePersistedLists(): {
     }
   };
 
+  // Custom setLists that persists changes
   const setLists: React.Dispatch<React.SetStateAction<CheckList[]>> = (value) => {
     setListsState((prev) => {
       const next = typeof value === "function" ? (value as any)(prev) : value;
@@ -30,6 +47,7 @@ export function usePersistedLists(): {
     });
   };
 
+  // Loads lists from WebSQL or localStorage, parses dates, and sorts
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,6 +82,7 @@ export function usePersistedLists(): {
     load();
   }, [load]);
 
+  // Expose a manual fetchLists function
   const fetchLists = () => load();
 
   return { lists, setLists, loading, fetchLists };

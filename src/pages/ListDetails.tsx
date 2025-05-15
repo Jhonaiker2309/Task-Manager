@@ -1,3 +1,28 @@
+/**
+ * ListDetails page component for displaying and managing tasks within a specific checklist.
+ *
+ * Features:
+ * - Shows all tasks for a selected checklist, with pagination and sorting.
+ * - Allows adding new tasks with validation (no duplicates, max 100 chars).
+ * - Supports toggling, editing, and deleting tasks via modals.
+ * - Provides sorting tasks by newest or oldest.
+ * - Responsive UI with navigation back to the main list page.
+ *
+ * Hooks used:
+ * - useLists: Accesses and manipulates checklist and task data.
+ * - useSortedTasks: Returns tasks sorted by the selected order.
+ * - usePagination: Handles pagination state and logic for tasks.
+ * - useModal: Controls modal open/close state and payloads for editing/deleting tasks.
+ * - useForm (react-hook-form): Manages the add-task form state and validation.
+ *
+ * UI:
+ * - Header with checklist title, creation date, and back navigation.
+ * - Form to add a new task with inline validation.
+ * - Sorting buttons for task order.
+ * - Paginated list of TaskItem components for each task.
+ * - Modals for editing and deleting tasks.
+ * - Handles empty and not-found states gracefully.
+ */
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLists } from "../contexts/ListContext";

@@ -1,3 +1,24 @@
+/**
+ * Modal component for editing the message of an existing task.
+ *
+ * Features:
+ * - Displays a modal dialog for editing a task's message.
+ * - Validates input: required, max 100 characters, not empty, unique, and must be different from the current message.
+ * - Calls the provided `onSave` callback with the new message on submit.
+ * - Resets form to the current message when opened.
+ *
+ * Props:
+ * - isOpen: Controls modal visibility.
+ * - onClose: Callback to close the modal.
+ * - onSave: Callback to save the new message.
+ * - currentMessage: The current message of the task.
+ * - existingMessages: Array of all messages in the list (for uniqueness validation).
+ *
+ * UI:
+ * - Textarea for editing the task message with validation feedback.
+ * - Cancel and Save buttons.
+ * - Accessible and responsive modal layout.
+ */
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
