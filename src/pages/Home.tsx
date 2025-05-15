@@ -22,6 +22,9 @@ const Home: React.FC = () => {
     "newToOld"
   );
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,6 +82,17 @@ const Home: React.FC = () => {
     });
   }, [lists, sortOrder]);
 
+  const totalPages = Math.ceil(sortedLists.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedLists.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white">
       <header className="mb-8">
@@ -89,7 +103,7 @@ const Home: React.FC = () => {
           Organiza tu día, una tarea a la vez.
         </p>
       </header>
-      <div className="flex flex-col sm:flex-row justify-between items-center my-4">
+      <div className="flex flex-row flex-wrap justify-between items-center my-4 gap-4">
         <button
           onClick={handleOpenCreateModal}
           className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-5 rounded-lg mb-4 sm:mb-0"
@@ -159,16 +173,40 @@ const Home: React.FC = () => {
       {lists.length === 0 && (
         <p className="text-slate-400">No hay listas aún. ¡Crea una!</p>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sortedLists.map((list) => (
-          <ListCard
-            key={list.slug}
-            list={list}
-            onEdit={handleOpenEditModal}
-            onDelete={handleOpenDeleteModal}
-          />
-        ))}
+      <div className="overflow-y-auto max-h-96 scrollbar-hide lg:overflow-visible lg:max-h-none">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {currentItems.map((list) => (
+            <ListCard
+              key={list.slug}
+              list={list}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteModal}
+            />
+          ))}
+        </div>
       </div>
+
+      {lists.length > 0 && (
+        <div className="mt-4 mb-4 flex justify-center items-center space-x-2">
+          <button
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Anterior
+          </button>
+          <span className="text-slate-400">
+            Página {currentPage} de {totalPages}
+          </span>
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
 
       <CreateListModal isOpen={isModalOpen} onClose={handleCloseCreateModal} />
 
