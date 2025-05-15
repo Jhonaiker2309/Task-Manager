@@ -1,14 +1,15 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLists } from "../contexts/ListContext";
 import EditTaskModal from "../components/EditTaskModal";
 import DeleteTaskModal from "../components/DeleteTaskModal";
 import TaskItem from "../components/TaskItem";
 import { useForm } from "react-hook-form";
+import { useSortedTasks } from "../hooks/useSortedTasks";
+import { usePagination } from "../hooks/usePagination";
+import { useModal } from "../hooks/useModal";
 
-type FormValues = {
-  message: string;
-};
+type FormValues = { message: string };
 
 const ListDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -20,125 +21,39 @@ const ListDetails: React.FC = () => {
     deleteTaskFromList,
   } = useLists();
 
+  const list = getListBySlug(slug ?? "");
+  const existingMessages = list?.items.map((it) => it.message) ?? [];
+
+  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">(
+    "newToOld"
+  );
+  const sortedTasks = useSortedTasks(list?.items ?? [], sortOrder);
+
+  const perPage = 5;
+  const { currentPage, totalPages, currentItems: pageItems, paginate } =
+    usePagination(sortedTasks, perPage);
+
+  const editModal = useModal<number>();
+  const deleteModal = useModal<number>();
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
     formState: { errors, isValid },
-  } = useForm<FormValues>({
-    mode: "onChange",
-    defaultValues: { message: "" },
-  });
-
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
-  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">("newToOld");
-  const [page, setPage] = useState(1);
-  const list = getListBySlug(slug || "");
-  const perPage = 5;
-  const last = page * perPage;
-  const first = last - perPage;
-
-  const existingMessages = useMemo(
-    () => list?.items.map((it) => it.message) ?? [],
-    [list?.items]
-  );
-
-  const sorted = useMemo(() => {
-    if (!list) return [];
-    const copy = [...list.items];
-    return copy.sort((a, b) =>
-      sortOrder === "newToOld"
-        ? b.created_at.getTime() - a.created_at.getTime()
-        : a.created_at.getTime() - b.created_at.getTime()
-    );
-  }, [list, sortOrder]);
-
-  const pageItems = sorted.slice(first, last);
-  const totalPages = Math.ceil(sorted.length / perPage);
+  } = useForm<FormValues>({ mode: "onChange", defaultValues: { message: "" } });
 
   const onSubmit = handleSubmit(({ message }) => {
     if (!list) return;
     addTaskToList(list.slug, message.trim());
     reset({ message: "" });
-    setPage(1);
+    paginate(1);
   });
 
-  const openEdit = (sortedIdx: number) => {
-    if (!list) return;
-    const item = sorted[sortedIdx];
-    const origIdx = list.items.findIndex(
-      (it) =>
-        it.created_at.getTime() === item.created_at.getTime() &&
-        it.message === item.message
-    );
-    if (origIdx !== -1) {
-      setEditIndex(origIdx);
-      setIsEditOpen(true);
-    }
-  };
-
-  const closeEdit = () => {
-    setIsEditOpen(false);
-    setEditIndex(null);
-  };
-
-  const saveEdit = (newMessage: string) => {
-    if (list && editIndex !== null) {
-      editTaskInList(list.slug, editIndex, newMessage);
-    }
-    closeEdit();
-  };
-
-  const openDelete = (sortedIdx: number) => {
-    if (!list) return;
-    const item = sorted[sortedIdx];
-    const origIdx = list.items.findIndex(
-      (it) =>
-        it.created_at.getTime() === item.created_at.getTime() &&
-        it.message === item.message
-    );
-    if (origIdx !== -1) {
-      setDeleteIndex(origIdx);
-      setIsDeleteOpen(true);
-    }
-  };
-
-  const closeDelete = () => {
-    setIsDeleteOpen(false);
-    setDeleteIndex(null);
-  };
-
-  const confirmDelete = () => {
-    if (list && deleteIndex !== null) {
-      deleteTaskFromList(list.slug, deleteIndex);
-    }
-    closeDelete();
-  };
-
-  const handleToggle = (sortedIdx: number) => {
-    if (!list) return;
-    const item = sorted[sortedIdx];
-    const origIdx = list.items.findIndex(
-      (it) =>
-        it.created_at.getTime() === item.created_at.getTime() &&
-        it.message === item.message
-    );
-    if (origIdx !== -1) {
-      toggleTaskInList(list.slug, origIdx);
-    }
-  };
-
-  const changePage = (p: number) => {
-    if (p >= 1 && p <= totalPages) setPage(p);
-  };
-
   useEffect(() => {
-    setPage(1);
-  }, [sorted.length, sortOrder]);
+    paginate(1);
+  }, [sortedTasks, paginate]);
 
   if (!list) {
     return (
@@ -187,12 +102,15 @@ const ListDetails: React.FC = () => {
                   : true,
             })}
             placeholder="Ej: Comprar leche, revisar correos..."
-            className="flex-grow px-4 py-2.5 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
+            className="flex-grow px-4 py-2.5 bg-slate-700 border border-slate-600 rounded-md 
+                       text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 
+                       focus:border-purple-500 outline-none transition-colors"
           />
           <button
             type="submit"
             disabled={!isValid || !watch("message")?.trim()}
-            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-5 rounded-md shadow-sm transition-colors"
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed 
+                       text-white font-semibold py-2.5 px-5 rounded-md shadow-sm transition-colors"
           >
             Añadir Tarea
           </button>
@@ -207,7 +125,7 @@ const ListDetails: React.FC = () => {
       <section>
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold text-slate-200">Tareas</h3>
-          {sorted.length > 1 && (
+          {sortedTasks.length > 1 && (
             <div className="flex space-x-2">
               <button
                 onClick={() => setSortOrder("newToOld")}
@@ -233,42 +151,43 @@ const ListDetails: React.FC = () => {
           )}
         </div>
 
-        {sorted.length === 0 ? (
+        {pageItems.length === 0 ? (
           <p className="text-slate-400">No hay tareas. ¡Añade una!</p>
         ) : (
           <>
             <ul className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-              {pageItems.map((item, idx) => {
-                const sortedIdx = first + idx;
-                return (
-                  <TaskItem
-                    key={`${item.created_at.toISOString()}-${item.message}`}
-                    message={item.message}
-                    done={item.done}
-                    createdAt={item.created_at}
-                    onToggle={() => handleToggle(sortedIdx)}
-                    onEdit={() => openEdit(sortedIdx)}
-                    onDelete={() => openDelete(sortedIdx)}
-                  />
-                );
-              })}
+              {pageItems.map((item) => (
+                <TaskItem
+                  key={`${item.created_at.toISOString()}-${item.message}`}
+                  message={item.message}
+                  done={item.done}
+                  createdAt={item.created_at}
+                  onToggle={() =>
+                    toggleTaskInList(list.slug, item.origIdx)
+                  }
+                  onEdit={() => editModal.open(item.origIdx)}
+                  onDelete={() => deleteModal.open(item.origIdx)}
+                />
+              ))}
             </ul>
             {totalPages > 1 && (
               <div className="flex justify-center items-center space-x-2">
                 <button
-                  onClick={() => changePage(page - 1)}
-                  disabled={page === 1}
-                  className="px-3 py-1 text-sm bg-slate-700 text-slate-300 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm bg-slate-700 text-slate-300 rounded-md 
+                             hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Anterior
                 </button>
                 <span className="text-slate-400">
-                  Página {page} de {totalPages}
+                  Página {currentPage} de {totalPages}
                 </span>
                 <button
-                  onClick={() => changePage(page + 1)}
-                  disabled={page === totalPages}
-                  className="px-3 py-1 text-sm bg-slate-700 text-slate-300 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm bg-slate-700 text-slate-300 rounded-md 
+                             hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Siguiente
                 </button>
@@ -278,21 +197,28 @@ const ListDetails: React.FC = () => {
         )}
       </section>
 
-      {editIndex !== null && (
+      {editModal.payload !== null && (
         <EditTaskModal
-          isOpen={isEditOpen}
-          onClose={closeEdit}
-          currentMessage={list.items[editIndex].message}
-          onSave={saveEdit}
+          isOpen={editModal.isOpen}
+          onClose={editModal.close}
+          currentMessage={list.items[editModal.payload].message}
+          onSave={(msg) => {
+            editTaskInList(list.slug, editModal.payload!, msg);
+            editModal.close();
+          }}
           existingMessages={existingMessages}
         />
       )}
-      {deleteIndex !== null && (
+
+      {deleteModal.payload !== null && (
         <DeleteTaskModal
-          isOpen={isDeleteOpen}
-          onClose={closeDelete}
-          taskMessage={list.items[deleteIndex].message}
-          onConfirm={confirmDelete}
+          isOpen={deleteModal.isOpen}
+          onClose={deleteModal.close}
+          taskMessage={list.items[deleteModal.payload].message}
+          onConfirm={() => {
+            deleteTaskFromList(list.slug, deleteModal.payload!);
+            deleteModal.close();
+          }}
         />
       )}
     </div>

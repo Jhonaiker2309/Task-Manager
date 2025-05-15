@@ -1,83 +1,28 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState } from "react";
 import CreateListModal from "../components/CreateListModal";
 import DeleteListModal from "../components/DeleteListModal";
 import EditListModal from "../components/EditListModal";
 import { useLists } from "../contexts/ListContext";
 import ListCard from "../components/ListCard";
+import { useFileImport } from "../hooks/useFileImport";
+import { useSortedLists } from "../hooks/useSortedLists";
+import { usePagination } from "../hooks/usePagination";
+import { useModal } from "../hooks/useModal";
 
 const Home: React.FC = () => {
-  const { lists, importLists } = useLists();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [listToDelete, setListToDelete] = useState<{
-    slug: string;
-    title: string;
-  } | null>(null);
-  const [listToModify, setListToModify] = useState<{
-    slug: string;
-    title: string;
-  } | null>(null);
-  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">(
-    "newToOld"
+  const { lists } = useLists();
+  const { fileInputRef, handleImport } = useFileImport();
+  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">("newToOld");
+
+  const sortedLists = useSortedLists(lists, sortOrder);
+  const { currentPage, totalPages, currentItems, paginate } = usePagination(
+    sortedLists,
+    6
   );
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    importLists(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleOpenCreateModal = () => setIsModalOpen(true);
-  const handleCloseCreateModal = () => setIsModalOpen(false);
-
-  const handleOpenDeleteModal = (list: { slug: string; title: string }) => {
-    setListToDelete(list);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setListToDelete(null);
-  };
-
-  const handleOpenEditModal = (list: { slug: string; title: string }) => {
-    setListToModify(list);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setListToModify(null);
-  };
-
-  const sortedLists = useMemo(() => {
-    const listsCopy = [...lists];
-    return listsCopy.sort((a, b) => {
-      if (sortOrder === "newToOld") {
-        return b.created_at.getTime() - a.created_at.getTime();
-      } else {
-        return a.created_at.getTime() - b.created_at.getTime();
-      }
-    });
-  }, [lists, sortOrder]);
-
-  const totalPages = Math.ceil(sortedLists.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedLists.slice(indexOfFirstItem, indexOfLastItem);
-
-  const paginate = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
+  const createModal = useModal();
+  const deleteModal = useModal<{ slug: string; title: string }>();
+  const editModal = useModal<{ slug: string; title: string }>();
 
   return (
     <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white">
@@ -89,54 +34,48 @@ const Home: React.FC = () => {
           Organiza tu día, una tarea a la vez.
         </p>
       </header>
+
       <div className="flex flex-row flex-wrap justify-between items-center my-4 gap-4">
         <button
-          onClick={handleOpenCreateModal}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-5 rounded-lg mb-4 sm:mb-0"
+          onClick={() => createModal.open()}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-5 rounded-lg"
         >
           Crear Nueva Lista
         </button>
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={handleImportJson}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            title={
-              "El JSON debe tener esta estructura:\n" +
-              "[\n" +
-              "  {\n" +
-              "    title: string,\n" +
-              "    created_at: string (ISO),\n" +
-              "    items: [\n" +
-              "      {\n" +
-              "        message: string,\n" +
-              "        done: boolean,\n" +
-              "        created_at: string (ISO)\n" +
-              "      },\n" +
-              "      …\n" +
-              "    ]\n" +
-              "  },\n" +
-              "  …\n" +
-              "]"
-            }
-            className="ml-0 sm:ml-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-5 rounded-lg"
-          >
-            Importar JSON
-          </button>
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={handleImport}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-5 rounded-lg"
+          title={
+            "El JSON debe tener esta estructura:\n" +
+            "[\n" +
+            "  {\n" +
+            "    title: string,\n" +
+            "    created_at: string (ISO),\n" +
+            "    items: [\n" +
+            "      { message, done, created_at }\n" +
+            "    ]\n" +
+            "  }\n" +
+            "]"
+          }
+        >
+          Importar JSON
+        </button>
       </div>
+
       {lists.length > 1 && (
-        <div className="flex space-x-2 order-2 sm:order-none mb-4">
+        <div className="flex space-x-2 mb-4">
           <button
             onClick={() => setSortOrder("newToOld")}
-            className={`px-4 py-2 text-xs rounded-md font-medium transition-colors ${
+            className={`px-4 py-2 text-xs rounded-md font-medium ${
               sortOrder === "newToOld"
-                ? "bg-purple-500 text-white shadow-sm"
+                ? "bg-purple-500 text-white"
                 : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
@@ -144,9 +83,9 @@ const Home: React.FC = () => {
           </button>
           <button
             onClick={() => setSortOrder("oldToNew")}
-            className={`px-4 py-2 text-xs rounded-md font-medium transition-colors ${
+            className={`px-4 py-2 text-xs rounded-md font-medium ${
               sortOrder === "oldToNew"
-                ? "bg-purple-500 text-white shadow-sm"
+                ? "bg-purple-500 text-white"
                 : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
@@ -158,17 +97,16 @@ const Home: React.FC = () => {
       {lists.length === 0 && (
         <p className="text-slate-400">No hay listas aún. ¡Crea una!</p>
       )}
-      <div className="overflow-y-auto max-h-96 scrollbar-hide lg:overflow-visible lg:max-h-none">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentItems.map((list) => (
-            <ListCard
-              key={list.slug}
-              list={list}
-              onEdit={handleOpenEditModal}
-              onDelete={handleOpenDeleteModal}
-            />
-          ))}
-        </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {currentItems.map((list) => (
+          <ListCard
+            key={list.slug}
+            list={list}
+            onEdit={() => editModal.open(list)}
+            onDelete={() => deleteModal.open(list)}
+          />
+        ))}
       </div>
 
       {lists.length > 0 && (
@@ -176,7 +114,7 @@ const Home: React.FC = () => {
           <button
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50"
           >
             Anterior
           </button>
@@ -186,28 +124,31 @@ const Home: React.FC = () => {
           <button
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50"
           >
             Siguiente
           </button>
         </div>
       )}
 
-      <CreateListModal isOpen={isModalOpen} onClose={handleCloseCreateModal} />
-
-      <DeleteListModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        listSlug={listToDelete?.slug}
-        listTitle={listToDelete?.title}
+      <CreateListModal
+        isOpen={createModal.isOpen}
+        onClose={createModal.close}
       />
 
-      {listToModify && (
+      <DeleteListModal
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.close}
+        listSlug={deleteModal.payload?.slug}
+        listTitle={deleteModal.payload?.title}
+      />
+
+      {editModal.payload && (
         <EditListModal
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          currentTitle={listToModify.title}
-          listSlug={listToModify.slug}
+          isOpen={editModal.isOpen}
+          onClose={editModal.close}
+          currentTitle={editModal.payload.title}
+          listSlug={editModal.payload.slug}
         />
       )}
     </div>
