@@ -6,7 +6,7 @@ import { useLists } from "../contexts/ListContext";
 import ListCard from "../components/ListCard";
 
 const Home: React.FC = () => {
-  const { lists, fetchLists } = useLists();
+  const { lists, importLists } = useLists();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -26,26 +26,12 @@ const Home: React.FC = () => {
   const itemsPerPage = 6;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imported: any = JSON.parse(reader.result as string);
-        if (Array.isArray(imported)) {
-          localStorage.setItem("checkLists", JSON.stringify(imported));
-          fetchLists();
-        } else {
-          console.error(
-            "Formato JSON inválido, se esperaba un array de listas"
-          );
-        }
-      } catch (err) {
-        console.error("Error parseando JSON:", err);
-      }
-    };
-    reader.readAsText(file);
+    importLists(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleOpenCreateModal = () => setIsModalOpen(true);
@@ -124,7 +110,6 @@ const Home: React.FC = () => {
               "El JSON debe tener esta estructura:\n" +
               "[\n" +
               "  {\n" +
-              "    slug: string,\n" +
               "    title: string,\n" +
               "    created_at: string (ISO),\n" +
               "    items: [\n" +

@@ -10,12 +10,13 @@ interface ListCardProps {
 
 const ListCard: React.FC<ListCardProps> = ({ list, onEdit, onDelete }) => {
   const handleDownload = () => {
-    const data = JSON.stringify(list, null, 2);
+    const { slug, ...listWithoutSlug } = list; // Excluye el slug
+    const data = JSON.stringify(listWithoutSlug, null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${list.slug}.json`;
+    a.download = `${list.title.replace(/\s+/g, "_")}.json`; // Usa el título como nombre del archivo
     a.click();
     URL.revokeObjectURL(url);
   };

@@ -8,6 +8,7 @@ import React, {
 import type { ReactNode } from "react";
 import type { CheckList, Item, ListContextType } from "../types";
 import { generateSlug } from "../utils";
+import notify from "../utils/notify";
 
 const LS_KEY = "checkLists";
 const DB_NAME = "CheckLists";
@@ -30,18 +31,19 @@ const initDB = () => {
   db.transaction((tx) => {
     tx.executeSql(
       `CREATE TABLE IF NOT EXISTS lists (
-         slug       TEXT PRIMARY KEY,
-         title      TEXT,
-         created_at INTEGER
+         slug       TEXT NOT NULL,
+         title      TEXT NOT NULL,
+         created_at INTEGER,
+         PRIMARY KEY (slug, title)
        )`
     );
     tx.executeSql(
       `CREATE TABLE IF NOT EXISTS tasks (
-         list_slug  TEXT,
-         message    TEXT,
+         list_slug  TEXT NOT NULL,
+         message    TEXT NOT NULL,
          done       INTEGER,
          created_at INTEGER,
-         PRIMARY KEY (message, created_at)
+         PRIMARY KEY (list_slug, message)
        )`
     );
     tx.executeSql(
@@ -125,7 +127,6 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({
         stored = ls ? JSON.parse(ls) : [];
       }
       if (stored) {
-        // Reconstruye Date y ordena items
         const parsed: CheckList[] = stored.map((list: any) => ({
           ...list,
           created_at: new Date(list.created_at),
@@ -155,13 +156,60 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
-  useEffect(() => {
-    loadListsFromLocalStorage();
-  }, [loadListsFromLocalStorage]);
-
-  const fetchLists = useCallback(() => {
-    loadListsFromLocalStorage();
-  }, [loadListsFromLocalStorage]);
+  const importLists = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const raw = JSON.parse(reader.result as string);
+        if (
+          !raw ||
+          Array.isArray(raw) ||
+          typeof raw !== "object" ||
+          !("title" in raw) ||
+          !("items" in raw)
+        ) {
+          notify(
+            "error",
+            "Formato JSON inválido: se esperaba un objeto lista con { title, items }"
+          );
+          return;
+        }
+        const lst: any = raw;
+        const parsedItems: Item[] = Array.isArray(lst.items)
+          ? lst.items.map((it: any) => ({
+              message: it.message.trim(),
+              done: Boolean(it.done),
+              created_at: it.created_at ? new Date(it.created_at) : new Date(),
+            }))
+          : [];
+        const messages = parsedItems.map((it) => it.message);
+        if (new Set(messages).size !== messages.length) {
+          notify("error", "La lista importada contiene tareas repetidas.");
+          return;
+        }
+        const newSlug = generateSlug(lst.title);
+        if (lists.some((l) => l.slug === newSlug)) {
+          notify("error", `La lista con slug '${newSlug}' ya existe.`);
+          return;
+        }
+        const newList: CheckList = {
+          slug: newSlug,
+          title: lst.title.trim(),
+          created_at: lst.created_at ? new Date(lst.created_at) : new Date(),
+          items: parsedItems,
+        };
+        const updatedLists = [newList, ...lists].sort(
+          (a, b) => b.created_at.getTime() - a.created_at.getTime()
+        );
+        setLists(updatedLists);
+        saveListsToLocalStorage(updatedLists);
+        notify("success", `Lista '${newList.title}' importada correctamente.`);
+      } catch (err) {
+        notify("error", "Error parseando JSON.");
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const createList = (title: string) => {
     const newSlug = generateSlug(title);
@@ -263,6 +311,14 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({
     saveListsToLocalStorage(updated);
   };
 
+  const fetchLists = useCallback(() => {
+    loadListsFromLocalStorage();
+  }, [loadListsFromLocalStorage]);
+
+  useEffect(() => {
+    loadListsFromLocalStorage();
+  }, [loadListsFromLocalStorage]);
+
   return (
     <ListContext.Provider
       value={{
@@ -277,6 +333,7 @@ export const ListProvider: React.FC<{ children: ReactNode }> = ({
         toggleTaskInList,
         editTaskInList,
         deleteTaskFromList,
+        importLists,
       }}
     >
       {children}

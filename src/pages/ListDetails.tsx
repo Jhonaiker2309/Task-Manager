@@ -4,6 +4,11 @@ import { useLists } from "../contexts/ListContext";
 import EditTaskModal from "../components/EditTaskModal";
 import DeleteTaskModal from "../components/DeleteTaskModal";
 import TaskItem from "../components/TaskItem";
+import { useForm } from "react-hook-form";
+
+type FormValues = {
+  message: string;
+};
 
 const ListDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -14,165 +19,136 @@ const ListDetails: React.FC = () => {
     editTaskInList,
     deleteTaskFromList,
   } = useLists();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isValid },
+  } = useForm<FormValues>({
+    mode: "onChange",
+    defaultValues: { message: "" },
+  });
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">("newToOld");
+  const [page, setPage] = useState(1);
   const list = getListBySlug(slug || "");
-  const [newTaskMessage, setNewTaskMessage] = useState("");
+  const perPage = 5;
+  const last = page * perPage;
+  const first = last - perPage;
 
-  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<{
-    originalIndex: number;
-    message: string;
-  } | null>(null);
-  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState<{
-    originalIndex: number;
-    message: string;
-  } | null>(null);
-
-  const [sortOrder, setSortOrder] = useState<"newToOld" | "oldToNew">(
-    "newToOld"
+  const existingMessages = useMemo(
+    () => list?.items.map((it) => it.message) ?? [],
+    [list?.items]
   );
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  const sortedItems = useMemo(() => {
+  const sorted = useMemo(() => {
     if (!list) return [];
-    const itemsCopy = [...list.items];
-    return itemsCopy.sort((a, b) => {
-      if (sortOrder === "newToOld") {
-        return b.created_at.getTime() - a.created_at.getTime();
-      } else {
-        return a.created_at.getTime() - b.created_at.getTime();
-      }
-    });
+    const copy = [...list.items];
+    return copy.sort((a, b) =>
+      sortOrder === "newToOld"
+        ? b.created_at.getTime() - a.created_at.getTime()
+        : a.created_at.getTime() - b.created_at.getTime()
+    );
   }, [list, sortOrder]);
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+  const pageItems = sorted.slice(first, last);
+  const totalPages = Math.ceil(sorted.length / perPage);
 
-  const handleAddTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskMessage.trim()) {
-      alert("El mensaje de la tarea no puede estar vacío.");
-      return;
-    }
-    if (list) {
-      addTaskToList(list.slug, newTaskMessage);
-      setNewTaskMessage("");
-    }
-  };
-
-  const handleToggleTask = (taskSortedIndex: number) => {
-    if (list) {
-      const originalItem = sortedItems[taskSortedIndex];
-      if (!originalItem) return;
-      const originalListIndex = list.items.findIndex(
-        (item) =>
-          item.created_at.getTime() === originalItem.created_at.getTime() &&
-          item.message === originalItem.message
-      );
-      if (originalListIndex !== -1) {
-        toggleTaskInList(list.slug, originalListIndex);
-      }
-    }
-  };
-
-  const handleOpenEditTaskModal = (taskSortedIndex: number) => {
+  const onSubmit = handleSubmit(({ message }) => {
     if (!list) return;
-    const itemInSortedArray = sortedItems[taskSortedIndex];
-    if (!itemInSortedArray) return;
+    addTaskToList(list.slug, message.trim());
+    reset({ message: "" });
+    setPage(1);
+  });
 
-    const originalListIndex = list.items.findIndex(
-      (it) =>
-        it.created_at.getTime() === itemInSortedArray.created_at.getTime() &&
-        it.message === itemInSortedArray.message
-    );
-
-    if (originalListIndex !== -1) {
-      setTaskToEdit({
-        originalIndex: originalListIndex,
-        message: itemInSortedArray.message,
-      });
-      setIsEditTaskModalOpen(true);
-    }
-  };
-
-  const handleCloseEditTaskModal = () => {
-    setIsEditTaskModalOpen(false);
-    setTaskToEdit(null);
-  };
-  const handleSaveTask = (newMessage: string) => {
-    if (list && taskToEdit !== null) {
-      editTaskInList(list.slug, taskToEdit.originalIndex, newMessage);
-    }
-    handleCloseEditTaskModal();
-  };
-
-  const handleOpenDeleteTaskModal = (taskSortedIndex: number) => {
+  const openEdit = (sortedIdx: number) => {
     if (!list) return;
-    const itemInSortedArray = sortedItems[taskSortedIndex];
-    if (!itemInSortedArray) return;
-
-    const originalListIndex = list.items.findIndex(
+    const item = sorted[sortedIdx];
+    const origIdx = list.items.findIndex(
       (it) =>
-        it.created_at.getTime() === itemInSortedArray.created_at.getTime() &&
-        it.message === itemInSortedArray.message
+        it.created_at.getTime() === item.created_at.getTime() &&
+        it.message === item.message
     );
-
-    if (originalListIndex !== -1) {
-      setTaskToDelete({
-        originalIndex: originalListIndex,
-        message: itemInSortedArray.message,
-      });
-      setIsDeleteTaskModalOpen(true);
+    if (origIdx !== -1) {
+      setEditIndex(origIdx);
+      setIsEditOpen(true);
     }
   };
 
-  const handleCloseDeleteTaskModal = () => {
-    setIsDeleteTaskModalOpen(false);
-    setTaskToDelete(null);
+  const closeEdit = () => {
+    setIsEditOpen(false);
+    setEditIndex(null);
   };
 
-  const handleConfirmDeleteTask = () => {
-    if (list && taskToDelete !== null) {
-      deleteTaskFromList(list.slug, taskToDelete.originalIndex);
+  const saveEdit = (newMessage: string) => {
+    if (list && editIndex !== null) {
+      editTaskInList(list.slug, editIndex, newMessage);
     }
-    handleCloseDeleteTaskModal();
+    closeEdit();
   };
 
-  const paginate = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
+  const openDelete = (sortedIdx: number) => {
+    if (!list) return;
+    const item = sorted[sortedIdx];
+    const origIdx = list.items.findIndex(
+      (it) =>
+        it.created_at.getTime() === item.created_at.getTime() &&
+        it.message === item.message
+    );
+    if (origIdx !== -1) {
+      setDeleteIndex(origIdx);
+      setIsDeleteOpen(true);
     }
+  };
+
+  const closeDelete = () => {
+    setIsDeleteOpen(false);
+    setDeleteIndex(null);
+  };
+
+  const confirmDelete = () => {
+    if (list && deleteIndex !== null) {
+      deleteTaskFromList(list.slug, deleteIndex);
+    }
+    closeDelete();
+  };
+
+  const handleToggle = (sortedIdx: number) => {
+    if (!list) return;
+    const item = sorted[sortedIdx];
+    const origIdx = list.items.findIndex(
+      (it) =>
+        it.created_at.getTime() === item.created_at.getTime() &&
+        it.message === item.message
+    );
+    if (origIdx !== -1) {
+      toggleTaskInList(list.slug, origIdx);
+    }
+  };
+
+  const changePage = (p: number) => {
+    if (p >= 1 && p <= totalPages) setPage(p);
   };
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [list?.items.length, sortOrder]);
-
-  useEffect(() => {
-    const newTotalPages = Math.ceil(sortedItems.length / itemsPerPage);
-    if (newTotalPages > 0 && currentPage > newTotalPages) {
-      setCurrentPage(newTotalPages);
-    } else if (newTotalPages === 0 && sortedItems.length === 0) {
-      setCurrentPage(1);
-    }
-  }, [sortedItems.length, itemsPerPage, currentPage]);
+    setPage(1);
+  }, [sorted.length, sortOrder]);
 
   if (!list) {
     return (
       <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white text-center">
         <h2 className="text-2xl text-red-500 mb-4">Lista no encontrada</h2>
-        <p className="text-slate-400 mb-6">
-          La lista con el slug "{slug}" no pudo ser encontrada o no existe.
-        </p>
         <Link
           to="/"
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg"
+          className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md"
         >
-          Volver a Mis Listas
+          Volver
         </Link>
       </div>
     );
@@ -181,25 +157,20 @@ const ListDetails: React.FC = () => {
   return (
     <div className="p-4 sm:p-8 bg-slate-900 min-h-screen text-white">
       <header className="mb-6 pb-4 border-b border-slate-700">
-        <Link
-          to="/"
-          className="text-purple-400 hover:text-purple-300 mb-3 inline-block text-sm"
-        >
-          &larr; Volver a Mis Listas
+        <Link to="/" className="text-purple-400 hover:text-purple-300 text-sm">
+          &larr; Mis Listas
         </Link>
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-purple-200 break-words">
-            {list.title}
-          </h1>
-        </div>
-        <p className="text-xs text-slate-500 mt-2">
-          Creada: {new Date(list.created_at).toLocaleDateString()} a las{" "}
-          {new Date(list.created_at).toLocaleTimeString()}
+        <h1 className="text-3xl sm:text-4xl font-bold text-purple-200 mt-2">
+          {list.title}
+        </h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Creada: {list.created_at.toLocaleDateString()} a las{" "}
+          {list.created_at.toLocaleTimeString()}
         </p>
       </header>
 
       <form
-        onSubmit={handleAddTask}
+        onSubmit={onSubmit}
         className="mb-8 p-4 bg-slate-800 rounded-lg shadow-md"
       >
         <h3 className="text-lg font-semibold mb-3 text-slate-200">
@@ -207,96 +178,97 @@ const ListDetails: React.FC = () => {
         </h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
-            type="text"
-            value={newTaskMessage}
-            onChange={(e) => setNewTaskMessage(e.target.value)}
+            {...register("message", {
+              required: "El mensaje es obligatorio",
+              maxLength: { value: 100, message: "Máx. 100 caracteres" },
+              validate: (v) =>
+                existingMessages.includes(v.trim())
+                  ? "Ya existe esa tarea"
+                  : true,
+            })}
             placeholder="Ej: Comprar leche, revisar correos..."
             className="flex-grow px-4 py-2.5 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
-            required
           />
           <button
             type="submit"
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-5 rounded-md shadow-sm transition-colors"
+            disabled={!isValid || !watch("message")?.trim()}
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-5 rounded-md shadow-sm transition-colors"
           >
             Añadir Tarea
           </button>
         </div>
+        {errors.message && (
+          <p className="mt-2 text-sm text-red-400">
+            {errors.message.message}
+          </p>
+        )}
       </form>
 
       <section>
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold text-slate-200">Tareas</h3>
-          {sortedItems.length > 1 && ( // Solo mostrar botones de orden si hay más de una tarea
+          {sorted.length > 1 && (
             <div className="flex space-x-2">
               <button
                 onClick={() => setSortOrder("newToOld")}
-                className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
+                className={`px-3 py-1.5 text-xs rounded-md font-medium ${
                   sortOrder === "newToOld"
                     ? "bg-purple-600 text-white"
                     : "bg-slate-600 text-slate-300 hover:bg-slate-500"
                 }`}
               >
-                Más Recientes
+                Más recientes
               </button>
               <button
                 onClick={() => setSortOrder("oldToNew")}
-                className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
+                className={`px-3 py-1.5 text-xs rounded-md font-medium ${
                   sortOrder === "oldToNew"
                     ? "bg-purple-600 text-white"
                     : "bg-slate-600 text-slate-300 hover:bg-slate-500"
                 }`}
               >
-                Más Antiguas
+                Más antiguas
               </button>
             </div>
           )}
         </div>
-        {sortedItems.length === 0 ? (
-          <p className="text-slate-400 mt-4">
-            No hay tareas en esta lista. ¡Añade una para empezar!
-          </p>
+
+        {sorted.length === 0 ? (
+          <p className="text-slate-400">No hay tareas. ¡Añade una!</p>
         ) : (
           <>
-            <div className="overflow-y-auto max-h-96 scrollbar-hide">
-              <ul className="space-y-3 mt-4">
-                {currentItems.map((item, pageIndex) => {
-                  const originalSortedIndex = indexOfFirstItem + pageIndex;
-                  return (
-                    <TaskItem
-                      key={`${item.created_at.toISOString()}-${
-                        item.message
-                      }-${originalSortedIndex}`}
-                      message={item.message}
-                      done={item.done}
-                      createdAt={item.created_at}
-                      onToggle={() => handleToggleTask(originalSortedIndex)}
-                      onEdit={() =>
-                        handleOpenEditTaskModal(originalSortedIndex)
-                      }
-                      onDelete={() =>
-                        handleOpenDeleteTaskModal(originalSortedIndex)
-                      }
-                    />
-                  );
-                })}
-              </ul>
-            </div>
+            <ul className="space-y-3 mb-4 max-h-96 overflow-y-auto">
+              {pageItems.map((item, idx) => {
+                const sortedIdx = first + idx;
+                return (
+                  <TaskItem
+                    key={`${item.created_at.toISOString()}-${item.message}`}
+                    message={item.message}
+                    done={item.done}
+                    createdAt={item.created_at}
+                    onToggle={() => handleToggle(sortedIdx)}
+                    onEdit={() => openEdit(sortedIdx)}
+                    onDelete={() => openDelete(sortedIdx)}
+                  />
+                );
+              })}
+            </ul>
             {totalPages > 1 && (
-              <div className="mt-6 flex justify-center items-center space-x-2">
+              <div className="flex justify-center items-center space-x-2">
                 <button
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => changePage(page - 1)}
+                  disabled={page === 1}
+                  className="px-3 py-1 text-sm bg-slate-700 text-slate-300 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Anterior
                 </button>
                 <span className="text-slate-400">
-                  Página {currentPage} de {totalPages}
+                  Página {page} de {totalPages}
                 </span>
                 <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => changePage(page + 1)}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 text-sm bg-slate-700 text-slate-300 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Siguiente
                 </button>
@@ -305,21 +277,22 @@ const ListDetails: React.FC = () => {
           </>
         )}
       </section>
-      {taskToEdit && list && (
+
+      {editIndex !== null && (
         <EditTaskModal
-          isOpen={isEditTaskModalOpen}
-          onClose={handleCloseEditTaskModal}
-          currentMessage={taskToEdit.message}
-          onSave={handleSaveTask}
+          isOpen={isEditOpen}
+          onClose={closeEdit}
+          currentMessage={list.items[editIndex].message}
+          onSave={saveEdit}
+          existingMessages={existingMessages}
         />
       )}
-
-      {taskToDelete && list && (
+      {deleteIndex !== null && (
         <DeleteTaskModal
-          isOpen={isDeleteTaskModalOpen}
-          onClose={handleCloseDeleteTaskModal}
-          taskMessage={taskToDelete.message}
-          onConfirm={handleConfirmDeleteTask}
+          isOpen={isDeleteOpen}
+          onClose={closeDelete}
+          taskMessage={list.items[deleteIndex].message}
+          onConfirm={confirmDelete}
         />
       )}
     </div>
