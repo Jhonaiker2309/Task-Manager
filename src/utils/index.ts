@@ -1,6 +1,11 @@
-export const generateSlug = (title: string) => {
-  return title
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '');
+import { openDB, loadListsFromWebSQL, saveListsToWebSQL } from './websql';
+import { generateSlug } from './generateSlug';
+import notify from './notify';
+
+export {
+  openDB,
+  loadListsFromWebSQL,
+  saveListsToWebSQL,
+  generateSlug,
+  notify,
 };
